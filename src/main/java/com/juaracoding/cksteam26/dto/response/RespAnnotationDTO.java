@@ -1,32 +1,27 @@
-package com.juaracoding.cksteam26.dto;
+package com.juaracoding.cksteam26.dto.response;
 
-import jakarta.validation.constraints.*;
+/*
+@Author satriadega a.k.a. spn
+Java Developer
+Created on 18/07/25 13.55
+@Last Modified 18/07/25 13.55
+Version 1.0
+*/
 
-public class ValAnnotationDTO {
+public class RespAnnotationDTO {
 
-    @NotNull(message = "DocumentId wajib diisi")
     private Long documentId;
 
     private Long ownerUserId;
 
-    private Boolean isVerified = false;
+    private Boolean isVerified;
 
-    @NotBlank(message = "SelectedText tidak boleh kosong")
-    @Size(max = 500, message = "SelectedText maksimal 500 karakter")
-    @Pattern(regexp = "^[a-zA-Z\\s]{1,500}$", message = "SelectedText hanya boleh berisi huruf dan spasi, maksimal 500 karakter")
     private String selectedText;
 
-    @NotNull(message = "StartNo wajib diisi")
-    @Min(value = 0, message = "StartNo minimal 0")
     private Integer startNo;
 
-    @NotNull(message = "EndNo wajib diisi")
-    @Min(value = 0, message = "EndNo minimal 0")
     private Integer endNo;
 
-    @NotBlank(message = "Description tidak boleh kosong")
-    @Size(max = 500, message = "Description maksimal 500 karakter")
-    @Pattern(regexp = "^[a-zA-Z\\s]{1,500}$", message = "Description hanya boleh berisi huruf dan spasi, maksimal 500 karakter")
     private String description;
 
     public Long getDocumentId() {
@@ -85,3 +80,4 @@ public class ValAnnotationDTO {
         this.description = description;
     }
 }
+

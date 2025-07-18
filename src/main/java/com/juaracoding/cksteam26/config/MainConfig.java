@@ -1,5 +1,6 @@
 package com.juaracoding.cksteam26.config;
 
+import com.juaracoding.cksteam26.security.Crypto;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -17,21 +18,19 @@ public class MainConfig {
     @Autowired
     private Environment env;
 
-//    SOON TO BE IMPLEMENTED
+    @Primary
+    @Bean
+    public DataSource getDataSource() {
+        DataSourceBuilder datasourceBuilder = DataSourceBuilder.create();
+        datasourceBuilder.driverClassName(env.getProperty("spring.datasource.driver-class-name"));
+        datasourceBuilder.url(Crypto.performDecrypt(env.getProperty("spring.datasource.url")));
+        datasourceBuilder.username(Crypto.performDecrypt(env.getProperty("spring.datasource.username")));
+        datasourceBuilder.password(Crypto.performDecrypt(env.getProperty("spring.datasource.password")));
+        return datasourceBuilder.build();
+    }
 
-//    @Primary
-//    @Bean
-//    public DataSource getDataSource() {
-//        DataSourceBuilder datasourceBuilder = DataSourceBuilder.create();
-//        datasourceBuilder.driverClassName(env.getProperty("spring.datasource.driver-class-name"));
-//        datasourceBuilder.url(Crypto.performDecrypt(env.getProperty("spring.datasource.url")));
-//        datasourceBuilder.username(Crypto.performDecrypt(env.getProperty("spring.datasource.username")));
-//        datasourceBuilder.password(Crypto.performDecrypt(env.getProperty("spring.datasource.password")));
-//        return datasourceBuilder.build();
-//    }
-//
-//    @Bean
-//    public ModelMapper getModelMapper(){
-//        return new ModelMapper();
-//    }
+    @Bean
+    public ModelMapper getModelMapper(){
+        return new ModelMapper();
+    }
 }

@@ -10,7 +10,11 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class Crypto {
 
-    private static String defaultKey;
+    private static String defaultKey = System.getenv("ENCRYPTION_KEY");
+
+    public Crypto() {
+        // empty constructor
+    }
 
     public Crypto(String key) {
         defaultKey = key;
@@ -32,6 +36,7 @@ public class Crypto {
     }
 
     public static String performEncrypt(String cryptoText) {
+        if(defaultKey == null) throw new IllegalStateException("ENCRYPTION_KEY environment variable not set");
         return performEncrypt(defaultKey, cryptoText);
     }
 
@@ -51,28 +56,29 @@ public class Crypto {
     }
 
     public static String performDecrypt(String cryptoText) {
+        if(defaultKey == null) throw new IllegalStateException("ENCRYPTION_KEY environment variable not set");
         return performDecrypt(defaultKey, cryptoText);
     }
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter 64-char ENCRYPTION_KEY (hex):");
-        String key = scanner.nextLine().trim();
-
-        if (!key.matches("^[a-fA-F0-9]{64}$")) {
-            System.out.println("Invalid key.");
+        String keyFromEnv = System.getenv("ENCRYPTION_KEY");
+        if (keyFromEnv == null || !keyFromEnv.matches("^[a-fA-F0-9]{64}$")) {
+            System.out.println("Invalid or missing ENCRYPTION_KEY environment variable.");
             scanner.close();
             return;
         }
 
+        System.out.println("Using ENCRYPTION_KEY from environment.");
+
         System.out.println("Enter text to encrypt:");
         String plaintext = scanner.nextLine();
 
-        String encrypted = performEncrypt(key, plaintext);
+        String encrypted = performEncrypt(keyFromEnv, plaintext);
         System.out.println("Encrypted: " + encrypted);
 
-        String decrypted = performDecrypt(key, encrypted);
+        String decrypted = performDecrypt(keyFromEnv, encrypted);
         System.out.println("Decrypted: " + decrypted);
 
         scanner.close();
