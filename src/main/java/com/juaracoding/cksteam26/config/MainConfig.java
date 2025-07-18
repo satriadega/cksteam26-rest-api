@@ -1,4 +1,4 @@
-package com.juaracoding.pcmspringboot4.config;
+package com.juaracoding.cksteam26.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
