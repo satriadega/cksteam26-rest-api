@@ -1,11 +1,17 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 
 @Entity
 @Table(name = "UserAccount")
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +45,7 @@ public class User {
     @Column(name = "IsVerified", nullable = false)
     private Boolean isVerified = false;
 
-    @Column(name = "Token", length = 6)
+    @Column(name = "Token", length = 255)
     private String token;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -49,6 +55,14 @@ public class User {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "UpdatedAt")
     private Date updatedAt;
+
+    /**
+     * disini letak role dari user nya yang akan di baca di API nanti
+     */
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    }
 
     public Long getUserId() {
         return userId;
