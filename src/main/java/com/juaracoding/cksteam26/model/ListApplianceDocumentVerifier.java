@@ -12,21 +12,18 @@ public class ListApplianceDocumentVerifier {
     @Column(name = "ListApplianceDocumentVerifierId")
     private Long listApplianceDocumentVerifierId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DocumentId",
-            foreignKey = @ForeignKey(name = "fk-ladv-document"))
-    private Document document;
+    @Column(name = "DocumentId", nullable = false)
+    private Long documentId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserId",
-            foreignKey = @ForeignKey(name = "fk-ladv-user"))
-    private User user;
+    @Column(name = "UserId", nullable = false)
+    private Long userId;
 
-    @Column(name = "IsAccepted", nullable = false)
-    private Boolean isAccepted = false;
+    @Column(name = "IsAccepted", nullable = false, columnDefinition = "bit default 0")
+    private Boolean isAccepted;
 
-    @Column(name = "CreatedAt", nullable = false, updatable = false)
-    private Date createdAt = new Date();
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "CreatedAt", nullable = false, updatable = false, columnDefinition = "datetime default getdate()")
+    private Date createdAt;
 
     public Long getListApplianceDocumentVerifierId() {
         return listApplianceDocumentVerifierId;
@@ -36,20 +33,20 @@ public class ListApplianceDocumentVerifier {
         this.listApplianceDocumentVerifierId = listApplianceDocumentVerifierId;
     }
 
-    public Document getDocument() {
-        return document;
+    public Long getDocumentId() {
+        return documentId;
     }
 
-    public void setDocument(Document document) {
-        this.document = document;
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
     }
 
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Boolean getIsAccepted() {

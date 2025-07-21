@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "UserDocumentVerifier")
-public class UserDocumentVerifier {
+@Table(name = "UserDocumentPosition")
+public class UserDocumentPosition {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,9 +25,14 @@ public class UserDocumentVerifier {
     @Column(name = "IsVerified", nullable = false)
     private Boolean isVerified = false;
 
+    @Column(name = "Position", length = 20, nullable = false)
+    private String position = "OWNER";
+
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private Date createdAt = new Date();
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
@@ -61,6 +66,14 @@ public class UserDocumentVerifier {
 
     public void setIsVerified(Boolean isVerified) {
         this.isVerified = isVerified;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
     }
 
     public Date getCreatedAt() {

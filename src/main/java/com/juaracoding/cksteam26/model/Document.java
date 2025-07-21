@@ -12,16 +12,6 @@ public class Document {
     @Column(name = "DocumentId")
     private Long documentId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserId",
-            foreignKey = @ForeignKey(name = "fk-document-user"))
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "OrganizationId",
-            foreignKey = @ForeignKey(name = "fk-document-organization"))
-    private Organization organization;
-
     @Column(name = "Title", length = 50, nullable = false)
     private String title;
 
@@ -29,10 +19,10 @@ public class Document {
     @Column(name = "Content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "IsVerifiedAll", nullable = false)
+    @Column(name = "IsVerifiedAll", nullable = false, columnDefinition = "bit default 1")
     private Boolean isVerifiedAll = true;
 
-    @Column(name = "PublicVisibility", nullable = false)
+    @Column(name = "PublicVisibility", nullable = false, columnDefinition = "bit default 0")
     private Boolean publicVisibility = false;
 
     @Column(name = "ReferenceDocumentId")
@@ -44,9 +34,11 @@ public class Document {
     @Column(name = "Subversion")
     private Integer subversion;
 
-    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "CreatedAt", nullable = false, updatable = false, columnDefinition = "datetime default getdate()")
     private Date createdAt = new Date();
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
@@ -56,22 +48,6 @@ public class Document {
 
     public void setDocumentId(Long documentId) {
         this.documentId = documentId;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Organization getOrganization() {
-        return organization;
-    }
-
-    public void setOrganization(Organization organization) {
-        this.organization = organization;
     }
 
     public String getTitle() {

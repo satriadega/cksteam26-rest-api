@@ -1,19 +1,12 @@
 package com.juaracoding.cksteam26.model;
 
-/*
-@Author satriadega a.k.a. spn
-Java Developer
-Created on 14/07/25 16.37
-@Last Modified 14/07/25 16.37
-Version 1.0
-*/
-
 import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
 @Table(name = "UserAccount")
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserId")
@@ -32,21 +25,29 @@ public class User {
     private String password;
 
     @Column(name = "StatusNotification", nullable = false)
-    private Boolean statusNotification;
+    private Boolean statusNotification = true;
 
     @Column(name = "HasNotification", nullable = false)
-    private Boolean hasNotification;
+    private Boolean hasNotification = false;
+
+    @Column(name = "NotificationCounter", nullable = false)
+    private Integer notificationCounter = 0;
+
+    @Column(name = "NotificationType", nullable = false)
+    private Integer notificationType = 0;
 
     @Column(name = "IsVerified", nullable = false)
-    private Boolean isVerified;
+    private Boolean isVerified = false;
 
     @Column(name = "Token", length = 6)
     private String token;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private Date createdAt = new Date();
 
-    @Column(name = "UpdatedAt", insertable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "UpdatedAt")
     private Date updatedAt;
 
     public Long getUserId() {
@@ -56,5 +57,100 @@ public class User {
     public void setUserId(Long userId) {
         this.userId = userId;
     }
-}
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Boolean getStatusNotification() {
+        return statusNotification;
+    }
+
+    public void setStatusNotification(Boolean statusNotification) {
+        this.statusNotification = statusNotification;
+    }
+
+    public Boolean getHasNotification() {
+        return hasNotification;
+    }
+
+    public void setHasNotification(Boolean hasNotification) {
+        this.hasNotification = hasNotification;
+    }
+
+    public Integer getNotificationCounter() {
+        return notificationCounter;
+    }
+
+    public void setNotificationCounter(Integer notificationCounter) {
+        this.notificationCounter = notificationCounter;
+    }
+
+    public Integer getNotificationType() {
+        return notificationType;
+    }
+
+    public void setNotificationType(Integer notificationType) {
+        this.notificationType = notificationType;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

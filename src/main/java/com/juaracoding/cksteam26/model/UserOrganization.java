@@ -29,6 +29,7 @@ public class UserOrganization {
     @Column(name = "OrganizationOwner", nullable = false)
     private Boolean organizationOwner = false;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private Date createdAt = new Date();
 
