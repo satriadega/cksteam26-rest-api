@@ -24,6 +24,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,7 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
-//@Transactional
+@Transactional
 public class AuthService implements UserDetailsService {
 
     private final Random random = new Random();

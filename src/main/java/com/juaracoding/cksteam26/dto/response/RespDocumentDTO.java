@@ -1,54 +1,42 @@
-package com.juaracoding.cksteam26.model;
+package com.juaracoding.cksteam26.dto.response;
 
-import jakarta.persistence.*;
+/*
+@Author satriadega a.k.a. spn
+Java Developer
+Created on 23/07/25 03.26
+@Last Modified 23/07/25 03.26
+Version 1.0
+*/
 
 import java.util.Date;
 
-@Entity
-@Table(name = "Document")
-public class Document {
+public class RespDocumentDTO {
+    private Long documentId;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "DocumentId")
-    private Long id;
-
-    @Column(name = "Title", length = 50, nullable = false)
     private String title;
 
-    @Lob
-    @Column(name = "Content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "IsVerifiedAll", nullable = false, columnDefinition = "bit default 1")
-    private Boolean isVerifiedAll = true;
+    private Boolean isVerifiedAll;
 
-    @Column(name = "PublicVisibility", nullable = false, columnDefinition = "bit default 0")
-    private Boolean publicVisibility = false;
+    private Boolean publicVisibility;
 
-    @Column(name = "ReferenceDocumentId")
     private Long referenceDocumentId;
 
-    @Column(name = "Version")
     private Integer version;
 
-    @Column(name = "Subversion")
     private Integer subversion;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "CreatedAt", nullable = false, updatable = false, columnDefinition = "datetime default getdate()")
-    private Date createdAt = new Date();
+    private Date createdAt;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "UpdatedAt")
     private Date updatedAt;
 
-    public Long getId() {
-        return id;
+    public Long getDocumentId() {
+        return documentId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
     }
 
     public String getTitle() {

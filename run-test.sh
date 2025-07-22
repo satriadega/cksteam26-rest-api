@@ -6,6 +6,8 @@ export ENCRYPTION_KEY
 export EN_PRINT=y
 export EN_LOG=y
 export EN_MODE=testing
+export EN_SHOWSQL=false
+export EN_DATA_INIT=false
 
 mvn clean test -e -X
 
