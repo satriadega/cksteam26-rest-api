@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Pattern;
 public class ValRegistrationDTO {
 
     @NotBlank(message = "Username tidak boleh kosong")
-    @Pattern(regexp = "^([a-z0-9\\.]{8,16})$", message = "Format huruf kecil, angka, dan titik saja. Panjang 8-16 karakter. Contoh: paul.123")
+    @Pattern(regexp = "^([a-z0-9\\.]{8,16})$", message = "Format huruf kecil, angka, dan titik saja. Panjang 8-16 karakter. Contoh: dominic.123")
     private String username;
 
     @NotBlank(message = "Nama tidak boleh kosong")

@@ -59,7 +59,7 @@ public class AuthControllerTest extends AbstractTestNGSpringContextTests {
                     header("Content-Type", "application/json").
                     header("accept", "*/*").
                     body(req).
-                    request(Method.POST, "auth/regis");
+                    request(Method.POST, "auth/registration");
             int intResponse = response.getStatusCode();
             JsonPath jsonPath = response.jsonPath();
             otp = jsonPath.getString("data.otp");
