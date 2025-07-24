@@ -53,7 +53,7 @@ public class SecurityConfiguration {
                 authorizeHttpRequests(
                         request -> request.requestMatchers(
                                 "/auth/**",
-                                "/contoh/**",
+                                "/document/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll().anyRequest().authenticated()).

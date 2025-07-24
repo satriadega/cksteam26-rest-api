@@ -1,6 +1,8 @@
 package com.juaracoding.cksteam26.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ValDocumentDTO {
 
@@ -8,11 +10,11 @@ public class ValDocumentDTO {
 
     private Long organizationId;
 
-    @NotBlank(message = "Title wajib diisi")
-    @Size(max = 50, message = "Title maksimal 50 karakter")
+    @NotBlank(message = "Title is required")
+    @Size(max = 50, message = "Title must be at most 50 characters")
     private String title;
 
-    @NotBlank(message = "Content wajib diisi")
+    @NotBlank(message = "Content is required")
     private String content;
 
     private Boolean isVerifiedAll = true;
@@ -21,10 +23,10 @@ public class ValDocumentDTO {
 
     private Long referenceDocumentId;
 
-    @Min(value = 0, message = "Version minimal 0")
+    @Min(value = 0, message = "Version must be at least 0")
     private Integer version;
 
-    @Min(value = 0, message = "Subversion minimal 0")
+    @Min(value = 0, message = "Subversion must be at least 0")
     private Integer subversion;
 
     public Long getUserId() {

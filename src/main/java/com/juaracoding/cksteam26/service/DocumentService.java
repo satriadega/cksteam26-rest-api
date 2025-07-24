@@ -14,9 +14,11 @@ import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
 import com.juaracoding.cksteam26.model.Document;
 import com.juaracoding.cksteam26.repo.DocumentRepo;
 import com.juaracoding.cksteam26.util.GlobalResponse;
+import com.juaracoding.cksteam26.util.LoggingFile;
 import com.juaracoding.cksteam26.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,8 +30,9 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-//@Transactional
 public class DocumentService implements IService<Document> {
+
+    private String className = "DocumentService";
 
     @Autowired
     private DocumentRepo documentRepo;
@@ -46,9 +49,8 @@ public class DocumentService implements IService<Document> {
         Map<String, Object> mapResponse = null;
         try {
             pageData = documentRepo.findAll(pageable);
-            System.out.println("sampe sini gan!");
             if (pageData.isEmpty()) {
-                return GlobalResponse.dataTidakDitemukan("TRN01FV031", request);
+                return GlobalResponse.dataIsNotFound("TRN01FV031", request);
             }
             mapResponse = transformPagination.transform(mapToModelMapper(pageData.getContent()),
                     pageData, "id", null);
@@ -57,16 +59,7 @@ public class DocumentService implements IService<Document> {
             System.out.println(e);
             return GlobalResponse.serverError("TRN01FE031", request);
         }
-        return GlobalResponse.dataDitemukan(mapResponse, request);
-    }
-
-    public Document mapToModelMapper(ValDocumentDTO valDocumentDTO) {
-        return modelMapper.map(valDocumentDTO, Document.class);
-    }
-
-    public List<RespDocumentDTO> mapToModelMapper(List<Document> documentList) {
-        return modelMapper.map(documentList, new TypeToken<List<RespDocumentDTO>>() {
-        }.getType());
+        return GlobalResponse.dataIsFound(mapResponse, request);
     }
 
     @Override
@@ -81,7 +74,18 @@ public class DocumentService implements IService<Document> {
 
     @Override
     public ResponseEntity<Object> save(Document document, HttpServletRequest request) {
-        return null;
+
+        if (document == null) {
+            return GlobalResponse.objectNull("TRN01FV001", request);
+        }
+        try {
+            documentRepo.save(document);
+        } catch (Exception e) {
+            LoggingFile.logException(className, "save(Document document, HttpServletRequest request) SQLException", e);
+            return GlobalResponse.serverError("TRN01FE001", request);
+        }
+
+        return GlobalResponse.dataSavedSuccessfully(request);
     }
 
     @Override
@@ -92,5 +96,32 @@ public class DocumentService implements IService<Document> {
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
         return null;
+    }
+
+    public Document mapToModelMapper(ValDocumentDTO valDocumentDTO) {
+        modelMapper.addMappings(new PropertyMap<ValDocumentDTO, Document>() {
+            @Override
+            protected void configure() {
+                map().setId(source.getReferenceDocumentId());
+            }
+        });
+        return modelMapper.map(valDocumentDTO, Document.class);
+    }
+
+    public List<RespDocumentDTO> mapToModelMapper(List<Document> documentList) {
+        return modelMapper.map(documentList, new TypeToken<List<RespDocumentDTO>>() {
+        }.getType());
+    }
+
+    public ResponseEntity<Object> searchByKeyword(String keyword, Pageable pageable, HttpServletRequest request) {
+        try {
+            Page<Document> page = documentRepo.searchDocumentsByKeyword(keyword, pageable);
+            if (page.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC01FV001", request);
+            }
+            return GlobalResponse.dataIsFound(page.getContent(), request);
+        } catch (Exception e) {
+            return GlobalResponse.serverError("DOC01FE001", request);
+        }
     }
 }

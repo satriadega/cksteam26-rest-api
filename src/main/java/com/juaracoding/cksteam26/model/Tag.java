@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
@@ -10,7 +11,7 @@ public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TagId")
-    private Long tagId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "AnnotationId", nullable = false,
@@ -26,12 +27,12 @@ public class Tag {
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
-    public Long getTagId() {
-        return tagId;
+    public Long getId() {
+        return id;
     }
 
-    public void setTagId(Long tagId) {
-        this.tagId = tagId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Annotation getAnnotation() {

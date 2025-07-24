@@ -27,15 +27,15 @@ public class GlobalResponse {
         return new ResponseHandler().handleResponse("INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR, null, errorCode, request);
     }
 
-    public static ResponseEntity<Object> dataTidakDitemukan(String errorCode, HttpServletRequest request) {
-        return new ResponseHandler().handleResponse("DATA TIDAK DITEMUKAN", HttpStatus.BAD_REQUEST, null, errorCode, request);
+    public static ResponseEntity<Object> dataIsNotFound(String errorCode, HttpServletRequest request) {
+        return new ResponseHandler().handleResponse("DATA IS NOT FOUND", HttpStatus.BAD_REQUEST, null, errorCode, request);
     }
 
-    public static ResponseEntity<Object> dataDitemukan(Object data, HttpServletRequest request) {
-        return new ResponseHandler().handleResponse("DATA BERHASIL DITEMUKAN", HttpStatus.OK, data, null, request);
+    public static ResponseEntity<Object> dataIsFound(Object data, HttpServletRequest request) {
+        return new ResponseHandler().handleResponse("DATA SUCCESSFULLY FOUND", HttpStatus.OK, data, null, request);
     }
 
-    public static ResponseEntity<Object> invalidData(String errorCode, HttpServletRequest request) {
+    public static ResponseEntity<Object> objectNull(String errorCode, HttpServletRequest request) {
         return new ResponseHandler().handleResponse("INVALID DATA", HttpStatus.BAD_REQUEST, null, errorCode, request);
     }
 }

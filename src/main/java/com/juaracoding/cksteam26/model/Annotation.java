@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
@@ -10,7 +11,7 @@ public class Annotation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "AnnotationId")
-    private Long annotationId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DocumentId", nullable = false,
@@ -41,12 +42,20 @@ public class Annotation {
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
-    public Long getAnnotationId() {
-        return annotationId;
+    public Long getId() {
+        return id;
     }
 
-    public void setAnnotationId(Long annotationId) {
-        this.annotationId = annotationId;
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Boolean getVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(Boolean verified) {
+        isVerified = verified;
     }
 
     public Document getDocument() {
