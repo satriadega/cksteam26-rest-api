@@ -50,14 +50,14 @@ public class DocumentService implements IService<Document> {
         try {
             pageData = documentRepo.findAll(pageable);
             if (pageData.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("TRN01FV031", request);
+                return GlobalResponse.dataIsNotFound("DOC01FV001", request);
             }
             mapResponse = transformPagination.transform(mapToModelMapper(pageData.getContent()),
                     pageData, "id", null);
 
         } catch (Exception e) {
             System.out.println(e);
-            return GlobalResponse.serverError("TRN01FE031", request);
+            return GlobalResponse.serverError("DOC01FE001", request);
         }
         return GlobalResponse.dataIsFound(mapResponse, request);
     }
@@ -69,20 +69,56 @@ public class DocumentService implements IService<Document> {
 
     @Override
     public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value, HttpServletRequest request) {
-        return null;
+        Page<Document> page;
+        Map<String, Object> mapResponse;
+
+        try {
+            switch (column.toLowerCase()) {
+                case "title":
+                    page = documentRepo.findByTitleContainsIgnoreCase(value, pageable);
+                    break;
+                case "content":
+                    page = documentRepo.findByContentContainsIgnoreCase(value, pageable);
+                    break;
+                case "isverifiedall":
+                    page = documentRepo.findByIsVerifiedAll(Boolean.parseBoolean(value), pageable);
+                    break;
+                case "publicvisibility":
+                    page = documentRepo.findByPublicVisibility(Boolean.parseBoolean(value), pageable);
+                    break;
+                case "referencedocumentid":
+                    page = documentRepo.findByReferenceDocumentId(Long.parseLong(value), pageable);
+                    break;
+                case "version":
+                    page = documentRepo.findByVersion(Integer.parseInt(value), pageable);
+                    break;
+                case "subversion":
+                    page = documentRepo.findBySubversion(Integer.parseInt(value), pageable);
+                    break;
+                default:
+                    page = documentRepo.findAll(pageable);
+                    break;
+            }
+            mapResponse = transformPagination.transform(mapToModelMapper(page.getContent()), page, column, value);
+            return GlobalResponse.dataIsFound(mapResponse, request);
+        } catch (Exception e) {
+            LoggingFile.logException("DocumentService", "findByParam", e);
+            return GlobalResponse.serverError("DOC01FE011", request);
+        }
     }
+
 
     @Override
     public ResponseEntity<Object> save(Document document, HttpServletRequest request) {
 
         if (document == null) {
-            return GlobalResponse.objectNull("TRN01FV001", request);
+            return GlobalResponse.objectNull("DOC01FV021", request);
         }
         try {
             documentRepo.save(document);
         } catch (Exception e) {
             LoggingFile.logException(className, "save(Document document, HttpServletRequest request) SQLException", e);
-            return GlobalResponse.serverError("TRN01FE001", request);
+            return GlobalResponse.serverError("DOC01FE021", request);
         }
 
         return GlobalResponse.dataSavedSuccessfully(request);
@@ -117,11 +153,11 @@ public class DocumentService implements IService<Document> {
         try {
             Page<Document> page = documentRepo.searchDocumentsByKeyword(keyword, pageable);
             if (page.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC01FV001", request);
+                return GlobalResponse.dataIsNotFound("DOC01FV031", request);
             }
             return GlobalResponse.dataIsFound(page.getContent(), request);
         } catch (Exception e) {
-            return GlobalResponse.serverError("DOC01FE001", request);
+            return GlobalResponse.serverError("DOC01FE031", request);
         }
     }
 }
