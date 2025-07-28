@@ -38,4 +38,8 @@ public class GlobalResponse {
     public static ResponseEntity<Object> objectNull(String errorCode, HttpServletRequest request) {
         return new ResponseHandler().handleResponse("INVALID DATA", HttpStatus.BAD_REQUEST, null, errorCode, request);
     }
+
+    public static ResponseEntity<Object> dataIsDeleted(HttpServletRequest request) {
+        return new ResponseHandler().handleResponse("DATA SUCCESSFULLY DELETED", HttpStatus.OK, null, null, request);
+    }
 }

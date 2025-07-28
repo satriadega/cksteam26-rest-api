@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.handler;
 
 import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.RequestCapture;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -20,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Code Error X
  * VALIDATION = 01 //100
@@ -28,7 +28,7 @@ import java.util.Map;
  * AUTH / PERMISSION = 03 //100
  * MEDIA / FILE = 04 //100
  * EXTERNAL API / 3rd Party = 05 //100
- * OTHER       = 99 //100
+ * OTHER = 99 //100
  */
 @RestControllerAdvice
 @Configuration
@@ -44,26 +44,26 @@ public class GlobalHandlerException extends ResponseEntityExceptionHandler {
             Map<String, Object> mapError = new HashMap<>();
             mapError.put("field", fieldError.getField());
             mapError.put("message", fieldError.getDefaultMessage());
-//            mapError.put("rejectedValue", fieldError.getRejectedValue());
             errors.add(mapError);
         }
-        return new ResponseHandler().handleResponse("REQUEST TIDAK VALID", HttpStatus.BAD_REQUEST, errors, "X01001", request);
+        LoggingFile.logException("GlobalExceptionHandler", "handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) Request Package: " + RequestCapture.allRequest(request), ex);
+        return new ResponseHandler().handleResponse("Invalid request data", HttpStatus.BAD_REQUEST, errors, "X01001", request);
     }
 
     @ExceptionHandler(UnexpectedRollbackException.class)
     public ResponseEntity<Object> unexpectedRollbackException(UnexpectedRollbackException ex, HttpServletRequest request) {
-        LoggingFile.logException("GlobalExceptionHandler", "multipartException ", ex);
-        return new ResponseHandler().handleResponse("Kesalahan Input Data , Contoh : Entry Data duplikat", HttpStatus.BAD_REQUEST, null, "X02001", request);
+        LoggingFile.logException("GlobalExceptionHandler", "unexpectedRollbackException(UnexpectedRollbackException ex, HttpServletRequest request)", ex);
+        return new ResponseHandler().handleResponse("Input error, e.g., duplicate data entry", HttpStatus.BAD_REQUEST, null, "X02001", request);
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Object> runtimeException(RuntimeException ex, HttpServletRequest request) {
-        LoggingFile.logException("GlobalExceptionHandler", "runtimeException ", ex);
-        return new ResponseHandler().handleResponse("Terjadi Kesalahan Di Server", HttpStatus.INTERNAL_SERVER_ERROR, null, "X05001", request);
+        LoggingFile.logException("GlobalExceptionHandler", "runtimeException(RuntimeException ex, HttpServletRequest request)", ex);
+        return new ResponseHandler().handleResponse("An error occurred on the server", HttpStatus.INTERNAL_SERVER_ERROR, null, "X05001", request);
     }
 
     public ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers, HttpStatus status, HttpServletRequest request) {
-        LoggingFile.logException("GlobalExceptionHandler", "handleExceptionInternal ", ex);
-        return new ResponseHandler().handleResponse("Terjadi Kesalahan Di Server", status, null, "X05999", request);
+        LoggingFile.logException("GlobalExceptionHandler", "handleExceptionInternal(Exception ex, Object body, HttpHeaders headers, HttpStatus status, HttpServletRequest request)", ex);
+        return new ResponseHandler().handleResponse("An internal server error occurred", status, null, "X05999", request);
     }
 }

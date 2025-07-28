@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
@@ -64,8 +65,9 @@ public class UserOrganization {
 
     public void setOrganization(Organization organization) {
         this.organization = organization;
-        this.organizationId = (organization != null) ? organization.getOrganizationId() : null;
+        this.organizationId = (organization != null) ? organization.getId() : null;
     }
+
 
     public Boolean getOrganizationOwner() {
         return organizationOwner;

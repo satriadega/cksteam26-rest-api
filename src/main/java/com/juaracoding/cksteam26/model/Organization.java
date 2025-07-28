@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
@@ -10,7 +11,7 @@ public class Organization {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "OrganizationId")
-    private Long organizationId;
+    private Long id;
 
     @Column(name = "OrganizationName", nullable = false, length = 100)
     private String organizationName;
@@ -24,12 +25,12 @@ public class Organization {
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
-    public Long getOrganizationId() {
-        return organizationId;
+    public Long getId() {
+        return id;
     }
 
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getOrganizationName() {
@@ -50,6 +51,10 @@ public class Organization {
 
     public Date getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
     public Date getUpdatedAt() {

@@ -17,6 +17,7 @@ import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
 import com.juaracoding.cksteam26.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.modelmapper.TypeToken;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Transactional
 public class DocumentService implements IService<Document> {
 
     private String className = "DocumentService";
