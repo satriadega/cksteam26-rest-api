@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.controller;
 
 import com.juaracoding.cksteam26.dto.validasi.ValRegistrationDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValVerifyRegistrationDTO;
 import com.juaracoding.cksteam26.service.AuthService;
 import com.juaracoding.cksteam26.service.DocumentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,5 +26,12 @@ public class AuthController {
     @PostMapping("/registration")
     public ResponseEntity<Object> registration(@Valid @RequestBody ValRegistrationDTO registrationDTO, HttpServletRequest request) {
         return authService.registration(authService.mapToUser(registrationDTO), request);
+    }
+
+    @PostMapping("/verify-registration")
+    public ResponseEntity<Object> verifyRegistration(@Valid @RequestBody ValVerifyRegistrationDTO verifyRegistrationDTO
+            , HttpServletRequest request) {
+        return authService.verifyRegistration(authService.mapToUser(verifyRegistrationDTO), request);
+//        return null;
     }
 }
