@@ -8,7 +8,7 @@ Created on 23/07/25 03.10
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.dto.ValDocumentDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
 import com.juaracoding.cksteam26.service.DocumentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

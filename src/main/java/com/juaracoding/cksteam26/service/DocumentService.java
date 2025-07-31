@@ -9,8 +9,8 @@ Version 1.0
 */
 
 import com.juaracoding.cksteam26.core.IService;
-import com.juaracoding.cksteam26.dto.ValDocumentDTO;
 import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
 import com.juaracoding.cksteam26.model.Document;
 import com.juaracoding.cksteam26.repo.DocumentRepo;
 import com.juaracoding.cksteam26.util.GlobalResponse;
