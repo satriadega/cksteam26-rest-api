@@ -8,6 +8,8 @@ export EN_LOG=y
 export EN_MODE=development
 export EN_SHOWSQL=true
 export EN_DATA_INIT=true
+export EN_TESTING=y
+export EN_SMTP=n
 
 mvn spring-boot:run
 

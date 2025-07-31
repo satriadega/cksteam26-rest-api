@@ -32,6 +32,5 @@ public class AuthController {
     public ResponseEntity<Object> verifyRegistration(@Valid @RequestBody ValVerifyRegistrationDTO verifyRegistrationDTO
             , HttpServletRequest request) {
         return authService.verifyRegistration(authService.mapToUser(verifyRegistrationDTO), request);
-//        return null;
     }
 }

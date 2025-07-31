@@ -8,6 +8,6 @@ export EN_LOG=y
 export EN_MODE=testing
 export EN_SHOWSQL=false
 export EN_DATA_INIT=false
+export EN_TESTING=y
 
 mvn clean test -e -X
-

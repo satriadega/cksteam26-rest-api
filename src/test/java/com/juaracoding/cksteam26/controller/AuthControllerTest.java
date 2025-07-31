@@ -53,13 +53,13 @@ public class AuthControllerTest extends AbstractTestNGSpringContextTests {
             req.put("username", username);
             req.put("email", email);
             req.put("password", password);
-            req.put("confirmPassword", password);
 
             response = given().
                     header("Content-Type", "application/json").
                     header("accept", "*/*").
                     body(req).
                     request(Method.POST, "auth/registration");
+
             int intResponse = response.getStatusCode();
             JsonPath jsonPath = response.jsonPath();
             otp = jsonPath.getString("data.otp");
@@ -72,12 +72,14 @@ public class AuthControllerTest extends AbstractTestNGSpringContextTests {
 
             Assert.assertEquals(intResponse, 200);
             Assert.assertEquals(jsonPath.getString("data.email"), email);
-            Assert.assertEquals(jsonPath.getString("message"), "OTP Terkirim, Cek Email !!");
+            Assert.assertEquals(jsonPath.getString("message"), "Automation Testing: OTP Berhasil Dibuat !!");
             Assert.assertTrue(Boolean.parseBoolean(jsonPath.getString("success")));
             Assert.assertNotNull(jsonPath.getString("timestamp"));
 
         } catch (Exception e) {
             isOk = false;
+            e.printStackTrace();
+            Assert.fail("Exception occurred: " + e.getMessage());
         }
     }
 }
