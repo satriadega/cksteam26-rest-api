@@ -36,7 +36,7 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     List<User> findByTokenContainsIgnoreCase(String token);
 
-    Optional<User> findTop1ByOrderByUserIdDesc();
+    Optional<User> findTop1ByOrderByIdDesc();
 
-//    Optional<User> findByUsernameAndIsVerified(String username, Boolean valid);
+    Optional<User> findByEmailAndIsVerified(String username, Boolean valid);
 }

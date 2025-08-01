@@ -8,13 +8,15 @@ Created on 21/07/25 19.27
 Version 1.0
 */
 
+import com.juaracoding.cksteam26.config.JwtConfig;
 import com.juaracoding.cksteam26.config.OtherConfig;
-import com.juaracoding.cksteam26.dto.validasi.ValRegistrationDTO;
-import com.juaracoding.cksteam26.dto.validasi.ValVerifyRegistrationDTO;
+import com.juaracoding.cksteam26.dto.validasi.*;
 import com.juaracoding.cksteam26.handler.ResponseHandler;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.repo.UserRepo;
 import com.juaracoding.cksteam26.security.BcryptImpl;
+import com.juaracoding.cksteam26.security.Crypto;
+import com.juaracoding.cksteam26.security.JwtUtility;
 import com.juaracoding.cksteam26.util.LoggingFile;
 import com.juaracoding.cksteam26.util.RequestCapture;
 import com.juaracoding.cksteam26.util.SendMailOTP;
@@ -43,13 +45,16 @@ public class AuthService implements UserDetailsService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private JwtUtility jwtUtility;
+
     /**
      * 001-010
      */
     public ResponseEntity<Object> registration(User user, HttpServletRequest request) {
         if (user == null || user.getEmail() == null) {
             return new ResponseHandler().handleResponse(
-                    "Email Tidak Ditemukan !!",
+                    "Email not found!",
                     HttpStatus.BAD_REQUEST,
                     null,
                     "DOC00FV001",
@@ -68,9 +73,9 @@ public class AuthService implements UserDetailsService {
             if (optionalUser.isPresent()) {
                 User existingUser = optionalUser.get();
 
-                if (Boolean.TRUE.equals(existingUser.getIsVerified())) {
+                if (Boolean.TRUE.equals(existingUser.getVerified())) {
                     return new ResponseHandler().handleResponse(
-                            "Email Sudah Terdaftar !!",
+                            "Email is already registered!",
                             HttpStatus.CONFLICT,
                             null,
                             "DOC00FV002",
@@ -78,30 +83,31 @@ public class AuthService implements UserDetailsService {
                     );
                 }
 
-                // Update only the necessary fields (username, name, password)
                 existingUser.setUsername(user.getUsername());
                 existingUser.setName(user.getName());
-                existingUser.setPassword(BcryptImpl.hash(user.getPassword())); // Make sure to hash password
-                existingUser.setToken(BcryptImpl.hash(String.valueOf(otp)));  // Generate new token for OTP
 
-                // Save the updated user
+                String combined = user.getUsername() + user.getPassword();
+                existingUser.setPassword(BcryptImpl.hash(combined));
+
+                existingUser.setToken(BcryptImpl.hash(String.valueOf(otp)));
+
                 userRepo.save(existingUser);
 
-                user = existingUser;  // Set the updated user back
+                user = existingUser;
 
             } else {
-                // If user doesn't exist, create new user
+                String combined = user.getUsername() + user.getPassword();
+                user.setPassword(BcryptImpl.hash(combined));
                 user.setToken(BcryptImpl.hash(String.valueOf(otp)));
-                user.setPassword(BcryptImpl.hash(user.getPassword()));
+
                 userRepo.save(user);
             }
 
-            // Automation or regular email sending
             if (isAutomation) {
                 mapResponse.put("otp", otp);
             } else {
                 SendMailOTP.verifyRegisOTP(
-                        "OTP UNTUK REGISTRASI",
+                        "OTP FOR REGISTRATION",
                         user.getName(),
                         user.getEmail(),
                         String.valueOf(otp),
@@ -112,7 +118,7 @@ public class AuthService implements UserDetailsService {
             mapResponse.put("email", user.getEmail());
 
             return new ResponseHandler().handleResponse(
-                    isAutomation ? "Automation Testing: OTP Berhasil Dibuat !!" : "OTP Terkirim, Cek Email !!",
+                    isAutomation ? "Automation Testing: OTP successfully generated!" : "OTP sent, please check your email!",
                     HttpStatus.OK,
                     mapResponse,
                     null,
@@ -126,7 +132,7 @@ public class AuthService implements UserDetailsService {
                     e
             );
             return new ResponseHandler().handleResponse(
-                    "Server Tidak Dapat Memproses !!",
+                    "Server error occurred!",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     null,
                     "DOC00FE001",
@@ -154,19 +160,19 @@ public class AuthService implements UserDetailsService {
         return user;
     }
 
-//    public User mapToUser(LoginDTO loginDTO) {
-//        User user = new User();
-//        user.setUsername(loginDTO.getUsername());
-//        user.setPassword(loginDTO.getPassword());
-//
-//        return user;
-//    }
+    public User mapToUser(ValLoginDTO loginDTO) {
+        User user = new User();
+        user.setUsername(loginDTO.getUsername());
+        user.setPassword(loginDTO.getPassword());
+
+        return user;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<User> opUser = userRepo.findByUsernameAndIsVerified(username, true);
+        Optional<User> opUser = userRepo.findByEmailAndIsVerified(username, true);
         if (!opUser.isPresent()) {
-            throw new UsernameNotFoundException("Username atau Password Salah !!!");
+            throw new UsernameNotFoundException("Invalid username or password!");
         }
         User user = opUser.get();
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), user.getAuthorities());
@@ -179,31 +185,259 @@ public class AuthService implements UserDetailsService {
         try {
             int otp = random.nextInt(100000, 999999);
             Optional<User> opUser = userRepo.findByEmail(user.getEmail());
-            if (!opUser.isPresent()) {
-                return new ResponseHandler().handleResponse("Email Tidak Ditemukan !!", HttpStatus.BAD_REQUEST, null, "DOC00FV011", request);
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse("Email not found!", HttpStatus.BAD_REQUEST, null, "DOC00FV011", request);
             }
 
             User userNext = opUser.get();
-            System.out.println("=== DEBUG OTP VERIFICATION ===");
-            System.out.println("Input OTP (plaintext): " + user.getToken());
-            System.out.println("Hashed OTP from DB: " + userNext.getToken());
-            System.out.println("Match result: " + BcryptImpl.verifyHash(user.getToken(), userNext.getToken()));
-            System.out.println("================================");
+            String incomingToken = user.getToken();
+            String savedToken = userNext.getToken();
 
-            if (!BcryptImpl.verifyHash(user.getToken(), userNext.getToken())) {
-                return new ResponseHandler().handleResponse("OTP Salah !!", HttpStatus.BAD_REQUEST, null, "DOC00FV012", request);
+            if (incomingToken == null || savedToken == null || !BcryptImpl.verifyHash(incomingToken, savedToken)) {
+                return new ResponseHandler().handleResponse("Invalid OTP!", HttpStatus.BAD_REQUEST, null, "DOC00FV012", request);
             }
 
-            userNext.setIsVerified(true);
-            userNext.setToken(BcryptImpl.hash(String.valueOf(otp)));
+            userNext.setVerified(true);
+            userNext.setToken(null);
             userRepo.save(userNext);
 
-            return new ResponseHandler().handleResponse("Registrasi Berhasil !!", HttpStatus.OK, null, null, request);
+            return new ResponseHandler().handleResponse("Registration successful!", HttpStatus.OK, null, null, request);
 
         } catch (Exception e) {
-            LoggingFile.logException("AuthService", "verifyRegis(User user, HttpServletRequest request)" + RequestCapture.allRequest(request), e);
-
-            return new ResponseHandler().handleResponse("Terjadi Kesalahan Pada Server", HttpStatus.INTERNAL_SERVER_ERROR, null, "DOC00FE011", request);
+            LoggingFile.logException("AuthService", "verifyRegistration(User user, HttpServletRequest request)" + RequestCapture.allRequest(request), e);
+            return new ResponseHandler().handleResponse("Server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR, null, "DOC00FE011", request);
         }
+    }
+
+    /**
+     * 021-030
+     */
+    public ResponseEntity<Object> login(User dto, HttpServletRequest request) {
+        Map<String, Object> responseMap = new HashMap<>();
+        User userFromDb = null;
+
+        try {
+            String username = dto.getUsername();
+            Optional<User> opUser = userRepo.findByUsernameAndIsVerified(username, true);
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse("User not found", HttpStatus.BAD_REQUEST, null, "DOC00FV021", request);
+            }
+
+            userFromDb = opUser.get();
+
+            String combined = userFromDb.getUsername() + dto.getPassword();
+            if (!BcryptImpl.verifyHash(combined, userFromDb.getPassword())) {
+                return new ResponseHandler().handleResponse("Invalid username or password", HttpStatus.BAD_REQUEST, null, "DOC00FV022", request);
+            }
+        } catch (Exception e) {
+            LoggingFile.logException("AuthService", "login(ValLoginDTO dto, HttpServletRequest request) " + RequestCapture.allRequest(request), e);
+            return new ResponseHandler().handleResponse("Server error", HttpStatus.INTERNAL_SERVER_ERROR, null, "DOC00FE021", request);
+        }
+
+        Map<String, Object> mapData = new HashMap<>();
+        mapData.put("email", userFromDb.getEmail());
+        mapData.put("id", userFromDb.getId());
+        mapData.put("name", userFromDb.getName());
+
+        String token = jwtUtility.doGenerateToken(mapData, userFromDb.getUsername());
+
+        if (JwtConfig.getTokenEncryptEnable().equals("y")) {
+            token = Crypto.performEncrypt(token);
+        }
+
+        responseMap.put("token", token);
+
+        return new ResponseHandler().handleResponse("Login successful", HttpStatus.OK, responseMap, null, request);
+    }
+
+    /**
+     * 031-040
+     */
+    public ResponseEntity<Object> refreshToken(User user, HttpServletRequest request) {
+        Map<String, Object> responseMap = new HashMap<>();
+        User userFromDb;
+
+        try {
+            String identifier = user.getUsername();
+            Optional<User> opUser = userRepo.findByEmailAndIsVerified(identifier, true);
+
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse(
+                        "User not found",
+                        HttpStatus.BAD_REQUEST,
+                        null,
+                        "DOC00FV031",
+                        request
+                );
+            }
+
+            userFromDb = opUser.get();
+            String combined = userFromDb.getUsername() + user.getPassword();
+
+            if (!BcryptImpl.verifyHash(combined, userFromDb.getPassword())) {
+                return new ResponseHandler().handleResponse(
+                        "Invalid username or password",
+                        HttpStatus.BAD_REQUEST,
+                        null,
+                        "DOC00FV032",
+                        request
+                );
+            }
+
+        } catch (Exception e) {
+            LoggingFile.logException("AuthService", "refreshToken(User, HttpServletRequest)" + RequestCapture.allRequest(request), e);
+            return new ResponseHandler().handleResponse(
+                    "Server encountered an error",
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    null,
+                    "DOC00FE031",
+                    request
+            );
+        }
+
+        Map<String, Object> jwtPayload = new HashMap<>();
+        jwtPayload.put("email", userFromDb.getEmail());
+        jwtPayload.put("id", userFromDb.getId());
+        jwtPayload.put("name", userFromDb.getName());
+
+        String token = jwtUtility.doGenerateToken(jwtPayload, userFromDb.getUsername());
+        if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
+            token = Crypto.performEncrypt(token);
+        }
+
+        responseMap.put("token", token);
+
+        return new ResponseHandler().handleResponse(
+                "Login successful",
+                HttpStatus.OK,
+                responseMap,
+                null,
+                request
+        );
+    }
+
+    /**
+     * 041-050
+     */
+    public ResponseEntity<Object> lupaPasswordStepOne(User user, HttpServletRequest request) {
+        int intOtp = 0;
+        String strTokenEstafet = "";
+        Map<String, Object> mapResponse = new HashMap<>();
+        try {
+            Optional<User> opUser = userRepo.findByEmailAndIsVerified(user.getEmail(), true);
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse("User is not registered", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV041", request);
+            }
+            intOtp = random.nextInt(100000, 999999);
+            strTokenEstafet = BcryptImpl.hash(String.valueOf(intOtp));
+
+            User userNext = opUser.get();
+            userNext.setTokenEstafet(strTokenEstafet);
+            userNext.setToken(BcryptImpl.hash(String.valueOf(intOtp)));
+
+            if ("y".equalsIgnoreCase(OtherConfig.getEnableAutomationTesting())) {
+                mapResponse.put("otp", intOtp);
+            }
+            mapResponse.put("estafet", strTokenEstafet);
+        } catch (Exception e) {
+            return new ResponseHandler().handleResponse("Server error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null,
+                    "DOC00FE041", request);
+        }
+
+        return new ResponseHandler().handleResponse("OTP has been sent to email", HttpStatus.OK, mapResponse, null, request);
+    }
+
+    public User mapToUser(ValForgotPasswordDTO dto) {
+        User user = new User();
+        user.setEmail(dto.getEmail());
+        return user;
+    }
+
+    /**
+     * 051-060
+     */
+    public ResponseEntity<Object> lupaPasswordStepTwo(User user, HttpServletRequest request) {
+        int intOtp = 0;
+        String strTokenEstafet = "";
+        Map<String, Object> mapResponse = new HashMap<>();
+        try {
+            Optional<User> opUser = userRepo.findByEmailAndIsVerified(user.getEmail(), true);
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse("User is not registered", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV051", request);
+            }
+
+            User userNext = opUser.get();
+
+            boolean isValid = user.getTokenEstafet().equals(userNext.getTokenEstafet());
+            if (!isValid) {
+                return new ResponseHandler().handleResponse("Invalid request", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV052", request);
+            }
+
+            isValid = BcryptImpl.verifyHash(user.getToken(), userNext.getToken());
+            if (!isValid) {
+                return new ResponseHandler().handleResponse("Incorrect OTP", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV053", request);
+            }
+
+            intOtp = random.nextInt(100000, 999999);
+            strTokenEstafet = BcryptImpl.hash(String.valueOf(random.nextInt(99)));
+
+            userNext.setTokenEstafet(strTokenEstafet);
+            userNext.setToken(BcryptImpl.hash(String.valueOf(intOtp)));
+            mapResponse.put("estafet", strTokenEstafet);
+
+        } catch (Exception e) {
+            return new ResponseHandler().handleResponse("Server error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null,
+                    "DOC00FE051", request);
+        }
+
+        return new ResponseHandler().handleResponse("Verification successful", HttpStatus.OK, mapResponse, null, request);
+    }
+
+    public User mapToUser(ValForgotPasswordStepTwoDTO dto) {
+        User user = new User();
+        user.setEmail(dto.getEmail());
+        user.setToken(dto.getOtp());
+        user.setTokenEstafet(dto.getTokenEstafet());
+        return user;
+    }
+
+    /**
+     * 061-070
+     */
+    public ResponseEntity<Object> lupaPasswordStepThree(ValForgotPasswordStepThreeDTO dto, HttpServletRequest request) {
+        String strTokenEstafet = "";
+        try {
+            if (!dto.getPassword().equals(dto.getPasswordConfirmation())) {
+                return new ResponseHandler().handleResponse("Passwords do not match", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV061", request);
+            }
+
+            Optional<User> opUser = userRepo.findByEmailAndIsVerified(dto.getEmail(), true);
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse("User not registered", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV062", request);
+            }
+
+            User userNext = opUser.get();
+            if (!dto.getTokenEstafet().equals(userNext.getTokenEstafet())) {
+                return new ResponseHandler().handleResponse("Invalid request", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV063", request);
+            }
+
+            userNext.setTokenEstafet(null);
+            userNext.setToken(null);
+            userNext.setPassword(BcryptImpl.hash(userNext.getUsername() + dto.getPassword()));
+            userRepo.save(userNext);
+
+        } catch (Exception e) {
+            return new ResponseHandler().handleResponse("Server error", HttpStatus.INTERNAL_SERVER_ERROR, null,
+                    "DOC00FE061", request);
+        }
+
+        return new ResponseHandler().handleResponse("Password successfully changed", HttpStatus.OK, null, null, request);
     }
 }

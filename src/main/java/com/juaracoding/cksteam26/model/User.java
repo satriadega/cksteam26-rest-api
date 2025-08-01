@@ -16,7 +16,7 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserId")
-    private Long userId;
+    private Long id;
 
     @Column(name = "Username", nullable = false, length = 50, unique = true)
     private String username;
@@ -48,6 +48,9 @@ public class User implements UserDetails {
     @Column(name = "Token", length = 255)
     private String token;
 
+    @Column(name = "TokenEstafet", length = 64)
+    private String tokenEstafet;
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private Date createdAt = new Date();
@@ -62,14 +65,6 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     public String getUsername() {
@@ -136,14 +131,6 @@ public class User implements UserDetails {
         this.notificationType = notificationType;
     }
 
-    public Boolean getIsVerified() {
-        return isVerified;
-    }
-
-    public void setIsVerified(Boolean isVerified) {
-        this.isVerified = isVerified;
-    }
-
     public String getToken() {
         return token;
     }
@@ -166,5 +153,29 @@ public class User implements UserDetails {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Boolean getVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(Boolean verified) {
+        isVerified = verified;
+    }
+
+    public String getTokenEstafet() {
+        return tokenEstafet;
+    }
+
+    public void setTokenEstafet(String tokenEstafet) {
+        this.tokenEstafet = tokenEstafet;
     }
 }

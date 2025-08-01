@@ -56,7 +56,7 @@ public class UserOrganization {
 
     public void setUser(User user) {
         this.user = user;
-        this.userId = (user != null) ? user.getUserId() : null;
+        this.userId = (user != null) ? user.getId() : null;
     }
 
     public Organization getOrganization() {

@@ -13,25 +13,31 @@ import jakarta.validation.constraints.Pattern;
 
 public class ValRegistrationDTO {
 
-    @NotBlank(message = "Username tidak boleh kosong")
-    @Pattern(regexp = "^([a-z0-9\\.]{8,16})$", message = "Format huruf kecil, angka, dan titik saja. Panjang 8-16 karakter. Contoh: dominic.123")
+    @NotBlank(message = "Username must not be empty")
+    @Pattern(
+            regexp = "^([a-z0-9\\.]{8,16})$",
+            message = "Only lowercase letters, digits, and dots allowed. Length 8-16 characters. Example: dominic.123"
+    )
     private String username;
 
-    @NotBlank(message = "Nama tidak boleh kosong")
-    @Pattern(regexp = "^[a-zA-Z\\s]{4,70}$", message = "Hanya alfabet dan spasi. Minimal 4, maksimal 70 karakter")
+    @NotBlank(message = "Name must not be empty")
+    @Pattern(
+            regexp = "^[a-zA-Z\\s]{4,70}$",
+            message = "Only letters and spaces allowed. Minimum 4 and maximum 70 characters"
+    )
     private String name;
 
-    @NotBlank(message = "Email tidak boleh kosong")
+    @NotBlank(message = "Email must not be empty")
     @Pattern(
             regexp = "^(?=.{1,256})(?=.{1,64}@.{1,255}$)(?:(?![.])[a-zA-Z0-9._%+-]+(?:(?<!\\\\)[.][a-zA-Z0-9-]+)*?)@[a-zA-Z0-9.-]+(?:\\.[a-zA-Z]{2,50})+$",
-            message = "Format email tidak valid. Contoh: user_name123@sub.domain.com"
+            message = "Invalid email format. Example: user_name123@sub.domain.com"
     )
     private String email;
 
-    @NotBlank(message = "Password tidak boleh kosong")
+    @NotBlank(message = "Password must not be empty")
     @Pattern(
             regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[@_#\\-$])[A-Za-z0-9@_#\\-$]{9,16}$",
-            message = "Minimal 1 huruf besar, 1 huruf kecil, 1 angka, dan 1 karakter spesial (@, _, #, -, $). Panjang 9-16 karakter"
+            message = "At least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character (@, _, #, -, $). Length 9-16 characters"
     )
     private String password;
 
@@ -67,4 +73,3 @@ public class ValRegistrationDTO {
         this.password = password;
     }
 }
-

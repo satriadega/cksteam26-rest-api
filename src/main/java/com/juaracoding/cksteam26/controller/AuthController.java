@@ -1,7 +1,6 @@
 package com.juaracoding.cksteam26.controller;
 
-import com.juaracoding.cksteam26.dto.validasi.ValRegistrationDTO;
-import com.juaracoding.cksteam26.dto.validasi.ValVerifyRegistrationDTO;
+import com.juaracoding.cksteam26.dto.validasi.*;
 import com.juaracoding.cksteam26.service.AuthService;
 import com.juaracoding.cksteam26.service.DocumentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,4 +32,35 @@ public class AuthController {
             , HttpServletRequest request) {
         return authService.verifyRegistration(authService.mapToUser(verifyRegistrationDTO), request);
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<Object> login(@Valid @RequestBody ValLoginDTO loginDTO
+            , HttpServletRequest request) {
+        return authService.login(authService.mapToUser(loginDTO), request);
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<Object> tokenExpired(@Valid @RequestBody ValLoginDTO loginDTO
+            , HttpServletRequest request) {
+        return authService.refreshToken(authService.mapToUser(loginDTO), request);
+    }
+
+    @PostMapping("/forgot-password-step-one")
+    public ResponseEntity<Object> forgotPasswordStepOne(@Valid @RequestBody ValForgotPasswordDTO forgotPasswordDTO,
+                                                        HttpServletRequest request) {
+        return authService.lupaPasswordStepOne(authService.mapToUser(forgotPasswordDTO), request);
+    }
+
+    @PostMapping("/forgot-password-step-two")
+    public ResponseEntity<Object> forgotPasswordStepTwo(@Valid @RequestBody ValForgotPasswordStepTwoDTO dto,
+                                                        HttpServletRequest request) {
+        return authService.lupaPasswordStepTwo(authService.mapToUser(dto), request);
+    }
+
+    @PostMapping("/forgot-password-step-three")
+    public ResponseEntity<Object> resetPassword(@RequestBody ValForgotPasswordStepThreeDTO dto, HttpServletRequest request) {
+        return authService.lupaPasswordStepThree(dto, request);
+    }
+
+
 }
