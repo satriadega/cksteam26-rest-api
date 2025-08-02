@@ -114,7 +114,7 @@ public class UserOrganizationService implements IService<Organization> {
             List<User> memberUsers = new ArrayList<>();
             if (valCreateOrganizationDTO.getMembers() != null) {
                 for (String email : valCreateOrganizationDTO.getMembers()) {
-                    Optional<User> memberOpt = userRepo.findByEmail(email);
+                    Optional<User> memberOpt = userRepo.findByEmailAndIsVerified(email, true);
                     if (memberOpt.isEmpty()) {
                         return GlobalResponse.dataIsNotFound("DOC02FV014", request);
                     }
@@ -195,6 +195,7 @@ public class UserOrganizationService implements IService<Organization> {
                 RespOrganizationDTO orgDTO = new RespOrganizationDTO();
                 orgDTO.setId(uo.getOrganization().getId());
                 orgDTO.setOrganizationName(uo.getOrganization().getOrganizationName());
+                orgDTO.setPublicVisibility(uo.getOrganization().getPublicVisibility());
                 dto.setOrganization(orgDTO);
             }
 
