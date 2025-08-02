@@ -8,7 +8,7 @@ Created on 26/07/25 05.05
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.service.OrganizationService;
+import com.juaracoding.cksteam26.service.UserOrganizationService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,11 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrganizationController {
 
     @Autowired
-    OrganizationService organizationService;
+    UserOrganizationService userOrganizationService;
 
     @GetMapping
+//    @PreAuthorize("hasAuthority('Organization')")
     public Object findAll(HttpServletRequest request) {
-        return organizationService.findAllWithoutPagination(request);
+        return userOrganizationService.findAllWithoutPagination(request);
     }
 
 //    @PutMapping("/{id}")

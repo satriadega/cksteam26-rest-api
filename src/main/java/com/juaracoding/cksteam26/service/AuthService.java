@@ -170,14 +170,14 @@ public class AuthService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<User> opUser = userRepo.findByEmailAndIsVerified(username, true);
+        Optional<User> opUser = userRepo.findByUsernameAndIsVerified(username, true);
         if (!opUser.isPresent()) {
             throw new UsernameNotFoundException("Invalid username or password!");
         }
         User user = opUser.get();
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), user.getAuthorities());
     }
-
+    
     /**
      * 011-020
      */
@@ -236,8 +236,6 @@ public class AuthService implements UserDetailsService {
 
         Map<String, Object> mapData = new HashMap<>();
         mapData.put("email", userFromDb.getEmail());
-        mapData.put("id", userFromDb.getId());
-        mapData.put("name", userFromDb.getName());
 
         String token = jwtUtility.doGenerateToken(mapData, userFromDb.getUsername());
 
@@ -297,8 +295,6 @@ public class AuthService implements UserDetailsService {
 
         Map<String, Object> jwtPayload = new HashMap<>();
         jwtPayload.put("email", userFromDb.getEmail());
-        jwtPayload.put("id", userFromDb.getId());
-        jwtPayload.put("name", userFromDb.getName());
 
         String token = jwtUtility.doGenerateToken(jwtPayload, userFromDb.getUsername());
         if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
@@ -440,4 +436,5 @@ public class AuthService implements UserDetailsService {
 
         return new ResponseHandler().handleResponse("Password successfully changed", HttpStatus.OK, null, null, request);
     }
+
 }

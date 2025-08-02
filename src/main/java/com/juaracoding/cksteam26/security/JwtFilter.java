@@ -22,7 +22,6 @@ import java.io.IOException;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-
     @Autowired
     private JwtUtility jwtUtility;
 
@@ -35,35 +34,38 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String authorization = request.getHeader("Authorization");
         authorization = authorization == null ? "" : authorization;
-        String token = "";
-        String username = "";
+
         try {
-            if (!"".equals(authorization) &&
-                    authorization.startsWith("Bearer ") &&
-                    authorization.length() > 7) {
-                token = authorization.substring(7);
-                if (JwtConfig.getTokenEncryptEnable().equals("y")) {
+            if (authorization.startsWith("Bearer ") && authorization.length() > 7) {
+                String token = authorization.substring(7);
+
+                if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
                     token = Crypto.performDecrypt(token);
                 }
-                username = jwtUtility.getUsernameFromToken(token);
-                String strContentType = request.getContentType() == null ? "" : request.getContentType();
-                if (!strContentType.startsWith("multipart/form-data") || "".equals(strContentType)) {
-                    request = new MyHttpServletRequestWrapper(request);
-                }
+
+                String username = jwtUtility.getUsernameFromToken(token);
+
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    if (jwtUtility.validateToken(token)) {
-                        UserDetails userDetails = authService.loadUserByUsername(username);
-                        /** persiapan konteks permission / izin / hak ases nya saat di dorong ke controller nantinya */
-                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                    UserDetails userDetails = authService.loadUserByUsername(username);
+
+                    if (jwtUtility.validateToken(token, userDetails)) {
+                        String strContentType = request.getContentType() == null ? "" : request.getContentType();
+                        if (!strContentType.startsWith("multipart/form-data") || "".equals(strContentType)) {
+                            request = new MyHttpServletRequestWrapper(request);
+                        }
+
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
                 }
-
             }
         } catch (Exception e) {
             LoggingFile.logException("JwtFilter", "doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) " + RequestCapture.allRequest(request), e);
         }
+
         filterChain.doFilter(request, response);
     }
 }
