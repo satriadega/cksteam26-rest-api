@@ -54,24 +54,24 @@ public class UserOrganizationService {
             Map<String, Object> claims = jwtUtility.mappingBodyToken(token);
             String username = String.valueOf(claims.get("username"));
             if (username == null || username.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC02FV001", request);
+                return GlobalResponse.dataIsNotFound("DOC02FV002", request);
             }
 
             Optional<User> userOpt = userRepo.findByUsername(username);
             if (userOpt.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC02FV001", request);
+                return GlobalResponse.dataIsNotFound("DOC02FV003", request);
             }
             Long userId = userOpt.get().getId();
 
             List<UserOrganization> userOrganizationList = userOrganizationRepo.findByUserId(userId);
             if (userOrganizationList == null || userOrganizationList.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC02FV001", request);
+                return GlobalResponse.dataIsNotFound("DOC02FV004", request);
             }
             List<RespUserOrganizationDTO> dtoList = mapToModelMapper(userOrganizationList);
             return GlobalResponse.dataIsFound(dtoList, request);
         } catch (Exception e) {
             LoggingFile.logException(getClass().getSimpleName(), "findAllWithoutPagination", e);
-            return GlobalResponse.serverError("DOC02FE002", request);
+            return GlobalResponse.serverError("DOC02FE001", request);
         }
     }
 
