@@ -10,8 +10,10 @@ Version 1.0
 
 import com.juaracoding.cksteam26.config.JwtConfig;
 import com.juaracoding.cksteam26.dto.response.RespProfileDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValUpdateProfileDTO;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.repo.UserRepo;
+import com.juaracoding.cksteam26.security.BcryptImpl;
 import com.juaracoding.cksteam26.security.Crypto;
 import com.juaracoding.cksteam26.security.JwtUtility;
 import com.juaracoding.cksteam26.util.GlobalResponse;
@@ -24,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,7 +64,7 @@ public class ProfileService {
 
             Optional<User> userOpt = userRepo.findByUsername(username);
             if (userOpt.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC02FV003", request);
+                return GlobalResponse.dataIsNotFound("DOC03FV003", request);
             }
 
             List<User> userList = List.of(userOpt.get());
@@ -70,12 +73,66 @@ public class ProfileService {
 
         } catch (Exception e) {
             LoggingFile.logException(getClass().getSimpleName(), "findAllWithoutPagination", e);
-            return GlobalResponse.serverError("DOC02FE001", request);
+            return GlobalResponse.serverError("DOC03FE001", request);
         }
     }
+
+    public ResponseEntity<Object> update(User user, HttpServletRequest request) {
+        if (user == null) {
+            return GlobalResponse.objectNull("DOC03FV011", request);
+        }
+        try {
+            String bearerToken = request.getHeader("Authorization");
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return GlobalResponse.dataIsNotFound("DOC03FV012", request);
+            }
+
+            String token = bearerToken.substring(7);
+            if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
+                token = Crypto.performDecrypt(token);
+            }
+
+            Map<String, Object> claims = jwtUtility.mappingBodyToken(token);
+            String username = String.valueOf(claims.get("username"));
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC03FV013", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC03FV014", request);
+            }
+
+            User existingUser = userOpt.get();
+
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                String rawPasswordWithUsername = username + user.getPassword();
+                if (BcryptImpl.verifyHash(rawPasswordWithUsername, existingUser.getPassword())) {
+                    return GlobalResponse.customError("DOC03FV015", "Password baru tidak boleh sama dengan password sebelumnya", request);
+                }
+                existingUser.setPassword(BcryptImpl.hash(rawPasswordWithUsername));
+            }
+
+            existingUser.setName(user.getName());
+            existingUser.setStatusNotification(user.getStatusNotification());
+            existingUser.setUpdatedAt(new Date());
+
+            userRepo.save(existingUser);
+            return GlobalResponse.dataUpdatedSuccessfully(request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(getClass().getSimpleName(), "update", e);
+            return GlobalResponse.serverError("DOC03FE011", request);
+        }
+    }
+
 
     public List<RespProfileDTO> mapToModelMapper(List<User> userList) {
         return modelMapper.map(userList, new TypeToken<List<RespProfileDTO>>() {
         }.getType());
+    }
+
+    public User mapToModelMapper(ValUpdateProfileDTO valUpdateProfileDTO) {
+        return modelMapper.map(valUpdateProfileDTO, User.class);
     }
 }

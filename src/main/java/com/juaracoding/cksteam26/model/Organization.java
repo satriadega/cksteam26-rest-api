@@ -13,7 +13,7 @@ public class Organization {
     @Column(name = "OrganizationId")
     private Long id;
 
-    @Column(name = "OrganizationName", nullable = false, length = 100)
+    @Column(name = "OrganizationName", nullable = false, length = 100, unique = true)
     private String organizationName;
 
     @Column(name = "PublicVisibility", nullable = false)

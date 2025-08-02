@@ -17,9 +17,7 @@ import java.util.function.Function;
  */
 @Component
 public class JwtUtility {
-
-//    /** variable untuk menentukan OK */
-//    private String ok;
+    
 
     /**
      * variable untuk menentukan OK

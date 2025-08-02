@@ -9,30 +9,25 @@ import java.util.Date;
 @IdClass(UserOrganizationId.class)
 public class UserOrganization {
 
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    private final Date createdAt = new Date();
     @Id
     @Column(name = "UserId", nullable = false)
     private Long userId;
-
     @Id
     @Column(name = "OrganizationId", nullable = false)
     private Long organizationId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", insertable = false, updatable = false,
             foreignKey = @ForeignKey(name = "fk-userorganization-user"))
     private User user;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "OrganizationId", insertable = false, updatable = false,
             foreignKey = @ForeignKey(name = "fk-userorganization-organization"))
     private Organization organization;
-
     @Column(name = "OrganizationOwner", nullable = false)
     private Boolean organizationOwner = false;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "CreatedAt", nullable = false, updatable = false)
-    private Date createdAt = new Date();
 
     public Long getUserId() {
         return userId;

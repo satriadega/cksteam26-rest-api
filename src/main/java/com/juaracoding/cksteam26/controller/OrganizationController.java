@@ -8,12 +8,13 @@ Created on 26/07/25 05.05
 Version 1.0
 */
 
+import com.juaracoding.cksteam26.dto.validasi.ValCreateOrganizationDTO;
 import com.juaracoding.cksteam26.service.UserOrganizationService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("organization")
@@ -23,9 +24,16 @@ public class OrganizationController {
     UserOrganizationService userOrganizationService;
 
     @GetMapping
-//    @PreAuthorize("hasAuthority('Organization')")
     public Object findAll(HttpServletRequest request) {
         return userOrganizationService.findAllWithoutPagination(request);
+    }
+
+    @PostMapping()
+    public ResponseEntity<Object> registration(@Valid @RequestBody ValCreateOrganizationDTO valCreateOrganizationDTO
+            , HttpServletRequest request
+
+    ) {
+        return userOrganizationService.saveOrganizationWithMembers(valCreateOrganizationDTO, request);
     }
 
 //    @PutMapping("/{id}")
