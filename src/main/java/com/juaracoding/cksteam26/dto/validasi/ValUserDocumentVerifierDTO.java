@@ -1,4 +1,4 @@
-package com.juaracoding.cksteam26.dto;
+package com.juaracoding.cksteam26.dto.validasi;
 
 import jakarta.validation.constraints.NotNull;
 

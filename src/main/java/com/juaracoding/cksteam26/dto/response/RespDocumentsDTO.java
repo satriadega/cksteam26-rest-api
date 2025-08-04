@@ -3,52 +3,28 @@ package com.juaracoding.cksteam26.dto.response;
 /*
 @Author satriadega a.k.a. spn
 Java Developer
-Created on 23/07/25 03.26
-@Last Modified 23/07/25 03.26
+Created on 04/08/25 12.56
+@Last Modified 04/08/25 12.56
 Version 1.0
 */
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
-public class RespDocumentDTO {
+public class RespDocumentsDTO {
     private Long id;
-
     private String title;
-
     private String content;
-
-    private Boolean isVerifiedAll;
-
+    private Boolean publicVisibility;
     private Long referenceDocumentId;
-
     private Integer version;
-
     private Integer subversion;
-
-    private Date createdAt;
-
-    private Date updatedAt;
-
-    private List<RespAnnotationDTO> annotations;
-
+    private Instant createdAt;
+    private Instant updatedAt;
+    private Boolean privateDoc;
+    private Boolean verifiedAll;
+    private Boolean annotable;
     private List<RespTagDTO> tags;
-
-    public List<RespTagDTO> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<RespTagDTO> tags) {
-        this.tags = tags;
-    }
-
-    public List<RespAnnotationDTO> getAnnotations() {
-        return annotations;
-    }
-
-    public void setAnnotations(List<RespAnnotationDTO> annotations) {
-        this.annotations = annotations;
-    }
 
     public Long getId() {
         return id;
@@ -74,14 +50,13 @@ public class RespDocumentDTO {
         this.content = content;
     }
 
-    public Boolean getVerifiedAll() {
-        return isVerifiedAll;
+    public Boolean getPublicVisibility() {
+        return publicVisibility;
     }
 
-    public void setVerifiedAll(Boolean verifiedAll) {
-        isVerifiedAll = verifiedAll;
+    public void setPublicVisibility(Boolean publicVisibility) {
+        this.publicVisibility = publicVisibility;
     }
-
 
     public Long getReferenceDocumentId() {
         return referenceDocumentId;
@@ -107,19 +82,51 @@ public class RespDocumentDTO {
         this.subversion = subversion;
     }
 
-    public Date getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
-    public Date getUpdatedAt() {
+    public Instant getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Date updatedAt) {
+    public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getPrivateDoc() {
+        return privateDoc;
+    }
+
+    public void setPrivateDoc(Boolean privateDoc) {
+        this.privateDoc = privateDoc;
+    }
+
+    public Boolean getVerifiedAll() {
+        return verifiedAll;
+    }
+
+    public void setVerifiedAll(Boolean verifiedAll) {
+        this.verifiedAll = verifiedAll;
+    }
+
+    public Boolean getAnnotable() {
+        return annotable;
+    }
+
+    public void setAnnotable(Boolean annotable) {
+        this.annotable = annotable;
+    }
+
+    public List<RespTagDTO> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<RespTagDTO> tags) {
+        this.tags = tags;
     }
 }

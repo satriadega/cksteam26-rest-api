@@ -3,6 +3,7 @@ package com.juaracoding.cksteam26.model;
 import jakarta.persistence.*;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "Annotation")
@@ -41,6 +42,17 @@ public class Annotation {
 
     @Column(name = "UpdatedAt")
     private Date updatedAt;
+
+    @OneToMany(mappedBy = "annotation", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Tag> tags;
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
+    }
 
     public Long getId() {
         return id;

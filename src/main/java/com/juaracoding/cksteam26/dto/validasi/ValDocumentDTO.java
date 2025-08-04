@@ -2,13 +2,11 @@ package com.juaracoding.cksteam26.dto.validasi;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class ValDocumentDTO {
 
-    private Long userId;
-
-    private Long organizationId;
 
     @NotBlank(message = "Title is required")
     @Size(max = 50, message = "Title must be at most 50 characters")
@@ -17,32 +15,25 @@ public class ValDocumentDTO {
     @NotBlank(message = "Content is required")
     private String content;
 
-    private Boolean isVerifiedAll = true;
+    @NotNull(message = "publicVisibility cannot be null")
+    private Boolean publicVisibility;
 
-    private Boolean publicVisibility = false;
-
+    @NotNull(message = "isPrivate cannot be null")
+    private Boolean isPrivate;
     private Long referenceDocumentId;
-
+    @NotNull(message = "Version is required")
     @Min(value = 0, message = "Version must be at least 0")
     private Integer version;
-
+    @NotNull(message = "Subversion is required")
     @Min(value = 0, message = "Subversion must be at least 0")
     private Integer subversion;
 
-    public Long getUserId() {
-        return userId;
+    public Boolean getPrivate() {
+        return isPrivate;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getOrganizationId() {
-        return organizationId;
-    }
-
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
     }
 
     public String getTitle() {
@@ -59,14 +50,6 @@ public class ValDocumentDTO {
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    public Boolean getIsVerifiedAll() {
-        return isVerifiedAll;
-    }
-
-    public void setIsVerifiedAll(Boolean isVerifiedAll) {
-        this.isVerifiedAll = isVerifiedAll;
     }
 
     public Boolean getPublicVisibility() {

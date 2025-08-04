@@ -8,6 +8,8 @@ Created on 18/07/25 13.55
 Version 1.0
 */
 
+import java.util.List;
+
 public class RespAnnotationDTO {
 
     private Long documentId;
@@ -23,6 +25,24 @@ public class RespAnnotationDTO {
     private Integer endNo;
 
     private String description;
+
+    private List<RespTagDTO> tags;
+
+    public Boolean getVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(Boolean verified) {
+        isVerified = verified;
+    }
+
+    public List<RespTagDTO> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<RespTagDTO> tags) {
+        this.tags = tags;
+    }
 
     public Long getDocumentId() {
         return documentId;
