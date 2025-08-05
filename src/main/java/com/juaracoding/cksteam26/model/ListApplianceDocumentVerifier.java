@@ -1,16 +1,18 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
-@Table(name = "ListApplianceDocumentVerifier")
+@Table(name = "ListApplianceDocumentVerifier",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"UserId", "DocumentId"}))
 public class ListApplianceDocumentVerifier {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ListApplianceDocumentVerifierId")
-    private Long listApplianceDocumentVerifierId;
+    private Long id;
 
     @Column(name = "DocumentId", nullable = false)
     private Long documentId;
@@ -25,12 +27,20 @@ public class ListApplianceDocumentVerifier {
     @Column(name = "CreatedAt", nullable = false, updatable = false, columnDefinition = "datetime default getdate()")
     private Date createdAt;
 
-    public Long getListApplianceDocumentVerifierId() {
-        return listApplianceDocumentVerifierId;
+    public Long getId() {
+        return id;
     }
 
-    public void setListApplianceDocumentVerifierId(Long listApplianceDocumentVerifierId) {
-        this.listApplianceDocumentVerifierId = listApplianceDocumentVerifierId;
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Boolean getAccepted() {
+        return isAccepted;
+    }
+
+    public void setAccepted(Boolean accepted) {
+        isAccepted = accepted;
     }
 
     public Long getDocumentId() {

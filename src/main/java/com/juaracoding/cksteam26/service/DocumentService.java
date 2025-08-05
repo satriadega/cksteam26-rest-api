@@ -222,16 +222,16 @@ public class DocumentService implements IService<Document> {
             return GlobalResponse.objectNull("DOC02FV031", request);
         }
 
-        String username = tokenExtractor.extractUsernameFromRequest(request);
-        Long userId = null;
-        if (username != null) {
-            Optional<User> userOpt = userRepo.findByUsername(username);
-            if (userOpt.isPresent()) {
-                userId = userOpt.get().getId();
-            }
-        }
-
         try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            Long userId = null;
+            if (username != null) {
+                Optional<User> userOpt = userRepo.findByUsername(username);
+                if (userOpt.isPresent()) {
+                    userId = userOpt.get().getId();
+                }
+            }
+
             Optional<Document> documentOpt = documentRepo.findAccessibleDocumentById(documentId, userId);
             if (documentOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC02FV034", request);

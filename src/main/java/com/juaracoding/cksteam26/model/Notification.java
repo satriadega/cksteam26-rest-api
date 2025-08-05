@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
@@ -10,7 +11,7 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "NotificationId")
-    private Long notificationId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", nullable = false,
@@ -23,12 +24,31 @@ public class Notification {
     @Column(name = "isRead", nullable = false, columnDefinition = "bit default 0")
     private Boolean isRead = false;
 
-    public Long getNotificationId() {
-        return notificationId;
+    @Column(name = "CreatedAt", nullable = false, updatable = false, columnDefinition = "datetime default getdate()")
+    private Date createdAt = new Date();
+
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setNotificationId(Long notificationId) {
-        this.notificationId = notificationId;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Boolean getRead() {
+        return isRead;
+    }
+
+    public void setRead(Boolean read) {
+        isRead = read;
     }
 
     public User getUser() {
