@@ -1,15 +1,13 @@
-package com.juaracoding.cksteam26.dto;
+package com.juaracoding.cksteam26.dto.validasi;
 
 import jakarta.validation.constraints.*;
+
+import java.util.List;
 
 public class ValAnnotationDTO {
 
     @NotNull(message = "DocumentId wajib diisi")
     private Long documentId;
-
-    private Long ownerUserId;
-
-    private Boolean isVerified = false;
 
     @NotBlank(message = "SelectedText tidak boleh kosong")
     @Size(max = 500, message = "SelectedText maksimal 500 karakter")
@@ -29,28 +27,23 @@ public class ValAnnotationDTO {
     @Pattern(regexp = "^[a-zA-Z\\s]{1,500}$", message = "Description hanya boleh berisi huruf dan spasi, maksimal 500 karakter")
     private String description;
 
+    @Size(max = 10, message = "Maksimal 10 tags")
+    private List<@Pattern(regexp = "^[a-zA-Z]+$", message = "Tag hanya boleh huruf") String> tags;
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
     public Long getDocumentId() {
         return documentId;
     }
 
     public void setDocumentId(Long documentId) {
         this.documentId = documentId;
-    }
-
-    public Long getOwnerUserId() {
-        return ownerUserId;
-    }
-
-    public void setOwnerUserId(Long ownerUserId) {
-        this.ownerUserId = ownerUserId;
-    }
-
-    public Boolean getIsVerified() {
-        return isVerified;
-    }
-
-    public void setIsVerified(Boolean isVerified) {
-        this.isVerified = isVerified;
     }
 
     public String getSelectedText() {

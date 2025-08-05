@@ -26,7 +26,7 @@ public class PublicController {
 
     @GetMapping("/document")
     public Object searchByKeyword(
-            @RequestParam String keyword,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") Integer page,
             HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, 10, Sort.by("id").descending());

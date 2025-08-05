@@ -12,7 +12,11 @@ import com.juaracoding.cksteam26.model.UserDocumentPosition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface UserDocumentPositionRepo extends JpaRepository<UserDocumentPosition, Long> {
+
+    Optional<UserDocumentPosition> findByUserIdAndDocumentId(Long userId, Long documentId);
 
 }

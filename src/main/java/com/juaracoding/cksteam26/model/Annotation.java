@@ -11,7 +11,7 @@ public class Annotation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "AnnotationId")
+    @Column(name = "AnnotationId", nullable = false, updatable = false)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,20 +37,24 @@ public class Annotation {
     @Column(name = "Description", length = 500, nullable = false)
     private String description;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CreatedAt", nullable = false, updatable = false)
-    private Date createdAt = new Date();
+    private Date createdAt;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
-    @OneToMany(mappedBy = "annotation", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "annotation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tag> tags;
+
 
     public List<Tag> getTags() {
         return tags;
     }
 
     public void setTags(List<Tag> tags) {
+
         this.tags = tags;
     }
 
@@ -60,14 +64,6 @@ public class Annotation {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Boolean getVerified() {
-        return isVerified;
-    }
-
-    public void setVerified(Boolean verified) {
-        isVerified = verified;
     }
 
     public Document getDocument() {
@@ -86,12 +82,12 @@ public class Annotation {
         this.ownerUserId = ownerUserId;
     }
 
-    public Boolean getIsVerified() {
+    public Boolean getVerified() {
         return isVerified;
     }
 
-    public void setIsVerified(Boolean isVerified) {
-        this.isVerified = isVerified;
+    public void setVerified(Boolean verified) {
+        isVerified = verified;
     }
 
     public String getSelectedText() {
@@ -140,5 +136,10 @@ public class Annotation {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = new Date();
     }
 }

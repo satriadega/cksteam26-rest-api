@@ -10,7 +10,7 @@ public class Tag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TagId")
+    @Column(name = "TagId", nullable = false, updatable = false)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -18,15 +18,23 @@ public class Tag {
             foreignKey = @ForeignKey(name = "fk-tag-annotation"))
     private Annotation annotation;
 
-    @Column(name = "TagName", length = 50, nullable = false)
+    @Column(name = "TagName", nullable = false)
     private String tagName;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CreatedAt", nullable = false, updatable = false)
-    private Date createdAt = new Date();
+    private Date createdAt;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = new Date();
+    }
+
+    // Getters & setters
     public Long getId() {
         return id;
     }

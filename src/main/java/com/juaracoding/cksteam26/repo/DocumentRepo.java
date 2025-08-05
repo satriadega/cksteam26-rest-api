@@ -35,6 +35,20 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                                             @Param("userId") Long userId,
                                             Pageable pageable);
 
+    @Query("""
+                select d
+                from Document d
+                left join UserDocumentPosition udp on udp.document = d
+                left join UserOrganization uo on uo.userId = :userId
+                left join UserOrganization ownerOrg on ownerOrg.userId = udp.user.id
+                where (
+                    d.publicVisibility = true
+                    or (:userId is not null and udp.user.id = :userId)
+                    or (:userId is not null and uo.organizationId = ownerOrg.organizationId and d.isPrivate != true)
+                )
+            """)
+    Page<Document> findAllVisibleDocuments(@Param("userId") Long userId, Pageable pageable);
+
 
     @Query("""
                 SELECT d FROM Document d

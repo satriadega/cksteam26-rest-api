@@ -21,7 +21,6 @@ import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
 import com.juaracoding.cksteam26.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +28,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -247,7 +247,12 @@ public class DocumentService implements IService<Document> {
                 }
             }
 
-            Page<Document> page = documentRepo.searchDocumentsByKeyword(keyword, userId, pageable);
+            Page<Document> page;
+            if (keyword == null || keyword.trim().isEmpty()) {
+                page = documentRepo.findAllVisibleDocuments(userId, pageable);
+            } else {
+                page = documentRepo.searchDocumentsByKeyword(keyword.trim(), userId, pageable);
+            }
 
             if (page.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC01FV031", request);
@@ -286,4 +291,5 @@ public class DocumentService implements IService<Document> {
             return GlobalResponse.serverError("DOC01FE031", request);
         }
     }
+
 }
