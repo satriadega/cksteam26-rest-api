@@ -78,4 +78,5 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
 
     Page<Document> findBySubversion(Integer subversion, Pageable pageable);
 
+    Optional<Document> findTopByReferenceDocumentIdOrderByVersionDescSubversionDesc(Long referenceDocumentId);
 }

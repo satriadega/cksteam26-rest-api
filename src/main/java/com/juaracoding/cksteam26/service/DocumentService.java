@@ -147,11 +147,58 @@ public class DocumentService implements IService<Document> {
                 return GlobalResponse.dataIsNotFound("DOC02FV024", request);
             }
 
+            Long referenceId = document.getReferenceDocumentId();
+            if (referenceId == null) {
+                if (document.getVersion() != 0 || document.getSubversion() != 0) {
+                    return GlobalResponse.customError("DOC02FV026", "Version must be 0 and Subversion must be 0 for root documents", request);
+                }
+            } else {
+                Optional<UserDocumentPosition> userDocOpt = userDocumentPositionRepo.findByUserIdAndDocumentId(userOpt.get().getId(), referenceId);
+                if (userDocOpt.isEmpty() || !"OWNER".equalsIgnoreCase(userDocOpt.get().getPosition())) {
+                    return GlobalResponse.customError("DOC02FV031", "You are not authorized to version this document", request);
+                }
+
+                document.setId(null);
+
+                Optional<Document> latestRefDoc = documentRepo.findTopByReferenceDocumentIdOrderByVersionDescSubversionDesc(referenceId);
+                if (latestRefDoc.isEmpty()) {
+                    return GlobalResponse.customError("DOC02FV027", "Reference document not found", request);
+                }
+
+                Document latest = latestRefDoc.get();
+
+                int versionDiff = document.getVersion() - latest.getVersion();
+                int subversionDiff = document.getSubversion() - latest.getSubversion();
+
+                boolean valid;
+                if (versionDiff == 1) {
+                    valid = (document.getSubversion() == 0);
+                } else if (versionDiff == 0) {
+                    valid = (subversionDiff == 1);
+                } else {
+                    valid = false;
+                }
+
+                if (!valid) {
+                    return GlobalResponse.customError("DOC02FV030", "Version and Subversion must increment correctly", request);
+                }
+
+                latest.setAnnotable(false);
+                documentRepo.save(latest);
+            }
+
+
             User user = userOpt.get();
 
             document.setVerifiedAll(true);
             document.setAnnotable(true);
             Document savedDoc = documentRepo.save(document);
+
+            if (savedDoc.getVersion() == 0 && savedDoc.getSubversion() == 0 && savedDoc.getReferenceDocumentId() == null) {
+                savedDoc.setReferenceDocumentId(savedDoc.getId());
+                documentRepo.save(savedDoc);
+            }
+
 
             UserDocumentPosition userDocPosition = new UserDocumentPosition();
             userDocPosition.setUser(user);
