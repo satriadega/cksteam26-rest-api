@@ -264,6 +264,13 @@ public class DocumentService implements IService<Document> {
                             .map(this::mapToAnnotationDTO) // map ke DTO annotation jika ada DTO-nya
                             .collect(Collectors.toList()));
 
+            // Populate name from owner
+            Optional<UserDocumentPosition> userDocPos = userDocumentPositionRepo.findByDocumentIdAndPosition(documentId, "OWNER");
+            if (userDocPos.isPresent()) {
+                User ownerUser = userDocPos.get().getUser();
+                dto.setName(ownerUser.getName());
+            }
+
             return GlobalResponse.dataIsFound(dto, request);
         } catch (Exception e) {
             LoggingFile.logException(className, "findById", e);
