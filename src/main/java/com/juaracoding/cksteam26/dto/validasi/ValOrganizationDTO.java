@@ -1,6 +1,7 @@
-package com.juaracoding.cksteam26.dto;
+package com.juaracoding.cksteam26.dto.validasi;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ValOrganizationDTO {
 

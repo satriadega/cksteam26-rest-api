@@ -9,6 +9,7 @@ Version 1.0
 */
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -20,13 +21,10 @@ public class ValLoginDTO {
     @NotNull(message = "Username must not be null")
     @NotBlank(message = "Username must not be blank")
     @NotEmpty(message = "Username must not be empty")
-    @Pattern(regexp = "^[\\w\\.]{5,50}$", message = "Invalid username format, e.g.: paul.123")
+    @Pattern(regexp = "^[\\w\\.]{5,50}$", message = "Invalid username format, e.g.: hahaha.123")
     private String username;
 
-    @Pattern(
-            regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[@_#\\-$])[A-Za-z0-9@_#\\-$]{9,16}$",
-            message = "Invalid password format"
-    )
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[@_#\\-$])[A-Za-z0-9@_#\\-$]{9,16}$", message = "Invalid password format")
     private String password;
 
     public String getUsername() {

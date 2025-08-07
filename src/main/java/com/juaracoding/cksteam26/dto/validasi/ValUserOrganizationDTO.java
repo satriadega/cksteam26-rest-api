@@ -1,7 +1,8 @@
-package com.juaracoding.cksteam26.dto;
+package com.juaracoding.cksteam26.dto.validasi;
+
+import java.util.Date;
 
 import jakarta.validation.constraints.NotNull;
-import java.util.Date;
 
 public class ValUserOrganizationDTO {
 

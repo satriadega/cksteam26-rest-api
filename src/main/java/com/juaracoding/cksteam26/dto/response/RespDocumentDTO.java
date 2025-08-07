@@ -30,9 +30,17 @@ public class RespDocumentDTO {
 
     private Date updatedAt;
 
-    private List<RespAnnotationDTO> annotations;
+    private Boolean publicVisibility;
 
+    private Boolean isPrivate;
+    private List<RespAnnotationDTO> annotations;
     private List<RespTagDTO> tags;
+    private String name;
+    private Long annotationCount;
+
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
+    }
 
     public List<RespTagDTO> getTags() {
         return tags;
@@ -82,7 +90,6 @@ public class RespDocumentDTO {
         isVerifiedAll = verifiedAll;
     }
 
-
     public Long getReferenceDocumentId() {
         return referenceDocumentId;
     }
@@ -121,5 +128,21 @@ public class RespDocumentDTO {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getAnnotationCount() {
+        return annotationCount;
+    }
+
+    public void setAnnotationCount(Long annotationCount) {
+        this.annotationCount = annotationCount;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
