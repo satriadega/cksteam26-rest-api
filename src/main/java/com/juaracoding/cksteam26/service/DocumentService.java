@@ -8,8 +8,6 @@ Created on 23/07/25 03.11
 Version 1.0
 */
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,11 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
 import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
-import com.juaracoding.cksteam26.dto.response.RespTagDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
 import com.juaracoding.cksteam26.model.Annotation;
 import com.juaracoding.cksteam26.model.Document;
-import com.juaracoding.cksteam26.model.Tag;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.model.UserDocumentPosition;
 import com.juaracoding.cksteam26.repo.AnnotationRepo;
@@ -328,40 +324,19 @@ public class DocumentService implements IService<Document> {
                 return GlobalResponse.dataIsNotFound("DOC01FV031", request);
             }
 
-            List<Long> documentIds = page.getContent().stream()
-                    .map(Document::getId)
-                    .collect(Collectors.toList());
-
-            List<Tag> tags = tagRepo.findTagsByDocumentIds(documentIds);
-
-            Map<Long, List<Tag>> tagsByDocumentIdRaw = tags.stream()
-                    .collect(Collectors.groupingBy(tag -> tag.getAnnotation().getDocument().getId()));
-
-            Map<Long, List<RespTagDTO>> tagsByDocumentId = new HashMap<>();
-            for (Map.Entry<Long, List<Tag>> entry : tagsByDocumentIdRaw.entrySet()) {
-                List<RespTagDTO> dtoList = entry.getValue().stream()
-                        .map(tag -> modelMapper.map(tag, RespTagDTO.class))
-                        .collect(Collectors.toList());
-                tagsByDocumentId.put(entry.getKey(), dtoList);
-            }
-
-            List<RespDocumentDTO> dtoList = page.getContent().stream()
+             List<RespDocumentDTO> dtoList = page.getContent().stream()
                     .map(doc -> {
                         RespDocumentDTO dto = modelMapper.map(doc, RespDocumentDTO.class);
-                        dto.setTags(tagsByDocumentId.getOrDefault(doc.getId(), Collections.emptyList()));
 
-                        // Populate userId
+                        // Populate name from owner
                         Optional<UserDocumentPosition> userDocPos = userDocumentPositionRepo
-                                .findByDocumentId(doc.getId());
+                                .findByDocumentIdAndPosition(doc.getId(), "OWNER");
                         if (userDocPos.isPresent()) {
-                            User user = userDocPos.get().getUser();
-                            dto.setName(user.getName());
+                            User ownerUser = userDocPos.get().getUser();
+                            if (ownerUser != null) {
+                                dto.setName(ownerUser.getName());
+                            }
                         }
-
-                        // Populate annotationCount
-                        Long documentId = doc.getId();
-                        long annotationCount = annotationRepo.countByDocumentId(documentId);
-                        dto.setAnnotationCount(annotationCount);
 
                         return dto;
                     })
