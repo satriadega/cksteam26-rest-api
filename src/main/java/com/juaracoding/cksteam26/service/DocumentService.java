@@ -25,9 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
 import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
+import com.juaracoding.cksteam26.dto.response.RespTagDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
 import com.juaracoding.cksteam26.model.Annotation;
 import com.juaracoding.cksteam26.model.Document;
+import com.juaracoding.cksteam26.model.Tag;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.model.UserDocumentPosition;
 import com.juaracoding.cksteam26.repo.AnnotationRepo;
@@ -262,12 +264,14 @@ public class DocumentService implements IService<Document> {
                     annotations.stream()
                             .map(this::mapToAnnotationDTO) // map ke DTO annotation jika ada DTO-nya
                             .collect(Collectors.toList()));
+            dto.setAnnotationCount(annotationRepo.countByDocumentId(documentId));
 
             // Populate name from owner
             Optional<UserDocumentPosition> userDocPos = userDocumentPositionRepo.findByDocumentIdAndPosition(documentId, "OWNER");
             if (userDocPos.isPresent()) {
                 User ownerUser = userDocPos.get().getUser();
                 dto.setName(ownerUser.getName());
+                dto.setUsername(ownerUser.getUsername());
             }
 
             return GlobalResponse.dataIsFound(dto, request);
@@ -310,7 +314,15 @@ public class DocumentService implements IService<Document> {
     }
 
     public RespAnnotationDTO mapToAnnotationDTO(Annotation annotation) {
-        return modelMapper.map(annotation, RespAnnotationDTO.class);
+        RespAnnotationDTO dto = modelMapper.map(annotation, RespAnnotationDTO.class);
+        if (annotation.getTags() != null) {
+            dto.setTags(annotation.getTags().stream().map(this::mapToTagDTO).collect(Collectors.toList()));
+        }
+        return dto;
+    }
+
+    public RespTagDTO mapToTagDTO(Tag tag) {
+        return modelMapper.map(tag, RespTagDTO.class);
     }
 
     public ResponseEntity<Object> searchByKeyword(String keyword, Pageable pageable, HttpServletRequest request) {
@@ -337,7 +349,11 @@ public class DocumentService implements IService<Document> {
 
              List<RespDocumentDTO> dtoList = page.getContent().stream()
                     .map(doc -> {
-                        RespDocumentDTO dto = modelMapper.map(doc, RespDocumentDTO.class);
+                        RespDocumentDTO dto = mapToModelMapper(doc);
+
+                        List<Tag> tags = tagRepo.findTagsByDocumentId(doc.getId());
+                        dto.setTags(tags.stream().map(this::mapToTagDTO).collect(Collectors.toList()));
+                        dto.setAnnotationCount(annotationRepo.countByDocumentId(doc.getId()));
 
                         // Populate name from owner
                         Optional<UserDocumentPosition> userDocPos = userDocumentPositionRepo
