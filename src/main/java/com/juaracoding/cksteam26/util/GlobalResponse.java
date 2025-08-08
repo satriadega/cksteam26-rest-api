@@ -8,15 +8,17 @@ Created on 18/07/25 13.44
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.handler.ResponseHandler;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.juaracoding.cksteam26.handler.ResponseHandler;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 public class GlobalResponse {
 
-    public static ResponseEntity<Object> dataSavedSuccessfully(HttpServletRequest request) {
-        return new ResponseHandler().handleResponse("DATA SAVED SUCCESSFULLY", HttpStatus.CREATED, null, null, request);
+    public static ResponseEntity<Object> dataSavedSuccessfully(Object data, HttpServletRequest request) {
+        return new ResponseHandler().handleResponse("DATA SAVED SUCCESSFULLY", HttpStatus.CREATED, data, null, request);
     }
 
     public static ResponseEntity<Object> dataUpdatedSuccessfully(HttpServletRequest request) {

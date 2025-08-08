@@ -222,12 +222,15 @@ public class DocumentService implements IService<Document> {
             userDocPosition.setPosition("OWNER");
 
             userDocumentPositionRepo.save(userDocPosition);
+
+
+            return GlobalResponse.dataSavedSuccessfully(mapToModelMapper(savedDoc),request);
         } catch (Exception e) {
             LoggingFile.logException(className, "save(Document document, HttpServletRequest request)", e);
             return GlobalResponse.serverError("DOC02FE021", request);
         }
 
-        return GlobalResponse.dataSavedSuccessfully(request);
+
     }
 
     @Override
@@ -290,12 +293,20 @@ public class DocumentService implements IService<Document> {
     }
 
     public List<RespDocumentDTO> mapToModelMapper(List<Document> documentList) {
-        return modelMapper.map(documentList, new TypeToken<List<RespDocumentDTO>>() {
+        List<RespDocumentDTO> respDocumentDTOs = modelMapper.map(documentList, new TypeToken<List<RespDocumentDTO>>() {
         }.getType());
+
+        for (int i = 0; i < documentList.size(); i++) {
+            respDocumentDTOs.get(i).setDocumentId(documentList.get(i).getId());
+        }
+
+        return respDocumentDTOs;
     }
 
     public RespDocumentDTO mapToModelMapper(Document document) {
-        return modelMapper.map(document, RespDocumentDTO.class);
+        RespDocumentDTO respDocumentDTO = modelMapper.map(document, RespDocumentDTO.class);
+         respDocumentDTO.setDocumentId(document.getId());
+        return respDocumentDTO;
     }
 
     public RespAnnotationDTO mapToAnnotationDTO(Annotation annotation) {
@@ -303,7 +314,7 @@ public class DocumentService implements IService<Document> {
     }
 
     public ResponseEntity<Object> searchByKeyword(String keyword, Pageable pageable, HttpServletRequest request) {
-        try {
+         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             Long userId = null;
             if (username != null) {

@@ -124,7 +124,7 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
 
             notificationRepo.save(notification);
 
-            return GlobalResponse.dataSavedSuccessfully(request);
+            return GlobalResponse.dataSavedSuccessfully(null, request);
 
         } catch (Exception e) {
             LoggingFile.logException(getClass().getSimpleName(), "save", e);

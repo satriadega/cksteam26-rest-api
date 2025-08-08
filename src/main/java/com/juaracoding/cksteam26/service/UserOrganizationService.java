@@ -142,7 +142,7 @@ public class UserOrganizationService implements IService<Organization> {
                 userOrganizationRepo.save(userOrg);
             }
 
-            return GlobalResponse.dataSavedSuccessfully(request);
+            return GlobalResponse.dataSavedSuccessfully(null, request);
 
         } catch (Exception e) {
             LoggingFile.logException(getClass().getSimpleName(), "saveOrganizationWithMembers", e);

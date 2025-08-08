@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.List;
 
 public class RespDocumentDTO {
+    private Long documentId;
+
     private Long id;
 
     private String title;
@@ -64,6 +66,14 @@ public class RespDocumentDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getDocumentId() {
+        return documentId;
+    }
+
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
     }
 
     public String getTitle() {

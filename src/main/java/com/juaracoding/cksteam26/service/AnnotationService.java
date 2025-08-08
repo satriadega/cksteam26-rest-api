@@ -1,16 +1,8 @@
 package com.juaracoding.cksteam26.service;
 
-import com.juaracoding.cksteam26.core.IService;
-import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
-import com.juaracoding.cksteam26.model.*;
-import com.juaracoding.cksteam26.repo.AnnotationRepo;
-import com.juaracoding.cksteam26.repo.DocumentRepo;
-import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
-import com.juaracoding.cksteam26.repo.UserRepo;
-import com.juaracoding.cksteam26.security.TokenExtractor;
-import com.juaracoding.cksteam26.util.GlobalResponse;
-import com.juaracoding.cksteam26.util.LoggingFile;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Optional;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +10,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
+import com.juaracoding.cksteam26.model.Annotation;
+import com.juaracoding.cksteam26.model.Document;
+import com.juaracoding.cksteam26.model.Tag;
+import com.juaracoding.cksteam26.model.User;
+import com.juaracoding.cksteam26.model.UserDocumentPosition;
+import com.juaracoding.cksteam26.repo.AnnotationRepo;
+import com.juaracoding.cksteam26.repo.DocumentRepo;
+import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
+import com.juaracoding.cksteam26.repo.UserRepo;
+import com.juaracoding.cksteam26.security.TokenExtractor;
+import com.juaracoding.cksteam26.util.GlobalResponse;
+import com.juaracoding.cksteam26.util.LoggingFile;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
@@ -115,7 +121,7 @@ public class AnnotationService implements IService<Annotation> {
             annotation.setId(null);
             annotationRepo.save(annotation);
 
-            return GlobalResponse.dataSavedSuccessfully(request);
+            return GlobalResponse.dataSavedSuccessfully(null, request);
         } catch (Exception e) {
             LoggingFile.logException(className, "save(ValAnnotationDTO dto, HttpServletRequest request)", e);
             return GlobalResponse.serverError("DOC04FE001", request);

@@ -15,6 +15,7 @@ public class ValUserDTO {
     @Size(max = 50, message = "Name maksimal 50 karakter")
     private String name;
 
+
     @NotBlank(message = "Email wajib diisi")
     @Email(message = "Format email tidak valid")
     @Size(max = 150, message = "Email maksimal 150 karakter")
@@ -49,7 +50,7 @@ public class ValUserDTO {
     }
 
     public void setName(String name) {
-        this.name = name;
+         this.name = name != null ? name.trim() : null;
     }
 
     public String getEmail() {
