@@ -1,8 +1,12 @@
 package com.juaracoding.cksteam26.dto.validasi;
 
-import jakarta.validation.constraints.*;
-
 import java.util.List;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class ValAnnotationDTO {
 
@@ -11,7 +15,7 @@ public class ValAnnotationDTO {
 
     @NotBlank(message = "SelectedText tidak boleh kosong")
     @Size(max = 500, message = "SelectedText maksimal 500 karakter")
-    @Pattern(regexp = "^[a-zA-Z\\s]{1,500}$", message = "SelectedText hanya boleh berisi huruf dan spasi, maksimal 500 karakter")
+    @Pattern(regexp = "(?s)^.{1,500}$", message = "SelectedText boleh berisi huruf, angka, spasi, dan simbol apa saja, maksimal 500 karakter")
     private String selectedText;
 
     @NotNull(message = "StartNo wajib diisi")

@@ -2,6 +2,7 @@ package com.juaracoding.cksteam26.dto.validasi;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class ValTagDTO {
@@ -11,6 +12,7 @@ public class ValTagDTO {
 
     @NotBlank(message = "TagName wajib diisi")
     @Size(max = 50, message = "TagName maksimal 50 karakter")
+    @Pattern(regexp = "^[a-z]+$", message = "TagName hanya boleh berisi huruf kecil")
     private String tagName;
 
     public Long getAnnotationId() {
