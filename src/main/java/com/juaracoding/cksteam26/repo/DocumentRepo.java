@@ -1,13 +1,15 @@
 package com.juaracoding.cksteam26.repo;
 
-import com.juaracoding.cksteam26.model.Document;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
+import com.juaracoding.cksteam26.model.Document;
 
 public interface DocumentRepo extends JpaRepository<Document, Long> {
 
@@ -32,8 +34,8 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 )
             """)
     Page<Document> searchDocumentsByKeyword(@Param("keyword") String keyword,
-                                            @Param("userId") Long userId,
-                                            Pageable pageable);
+            @Param("userId") Long userId,
+            Pageable pageable);
 
     @Query("""
                 select d
@@ -48,7 +50,6 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 )
             """)
     Page<Document> findAllVisibleDocuments(@Param("userId") Long userId, Pageable pageable);
-
 
     @Query("""
                 SELECT d FROM Document d
@@ -78,5 +79,21 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
 
     Page<Document> findBySubversion(Integer subversion, Pageable pageable);
 
-    Optional<Document> findTopByReferenceDocumentIdOrderByVersionDescSubversionDesc(Long referenceDocumentId);
+    Optional<Document> findTopByIdOrderByVersionDescSubversionDesc(Long referenceDocumentId);
+
+    @Query("""
+                select d
+                from Document d
+                left join UserDocumentPosition udp on udp.document = d
+                left join UserOrganization uo on uo.userId = :userId
+                left join UserOrganization ownerOrg on ownerOrg.userId = udp.user.id
+                where d.referenceDocumentId = :referenceDocumentId
+                and (
+                    d.publicVisibility = true
+                    or (:userId is not null and udp.user.id = :userId)
+                    or (:userId is not null and uo.organizationId = ownerOrg.organizationId and d.isPrivate != true)
+                )
+            """)
+    List<Document> findRelatedDocumentsById(@Param("referenceDocumentId") Long referenceDocumentId,
+            @Param("userId") Long userId);
 }

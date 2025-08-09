@@ -14,8 +14,8 @@ public class ValAnnotationDTO {
     private Long documentId;
 
     @NotBlank(message = "SelectedText tidak boleh kosong")
-    @Size(max = 500, message = "SelectedText maksimal 500 karakter")
-    @Pattern(regexp = "(?s)^.{1,500}$", message = "SelectedText boleh berisi huruf, angka, spasi, dan simbol apa saja, maksimal 500 karakter")
+    @Size(max = 1000, message = "SelectedText minimal 1 karakter maksimal 1000 karakter")
+    @Pattern(regexp = "(?s)^.{1,1000}$", message = "SelectedText boleh berisi huruf, angka, spasi, dan simbol apa saja, maksimal 500 karakter")
     private String selectedText;
 
     @NotNull(message = "StartNo wajib diisi")
@@ -28,11 +28,11 @@ public class ValAnnotationDTO {
 
     @NotBlank(message = "Description tidak boleh kosong")
     @Size(max = 500, message = "Description maksimal 500 karakter")
-    @Pattern(regexp = "^[a-zA-Z\\s]{1,500}$", message = "Description hanya boleh berisi huruf dan spasi, maksimal 500 karakter")
+    @Pattern(regexp = "^[\\s\\S]{1,500}$", message = "Description maksimal 500 karakter")
     private String description;
 
     @Size(max = 10, message = "Maksimal 10 tags")
-    private List<@Pattern(regexp = "^[a-zA-Z]+$", message = "Tag hanya boleh huruf") String> tags;
+    private List<@Pattern(regexp = "^[a-zA-Z]+$", message = "Tag hanya boleh huruf tanpa spasi") String> tags;
 
     public List<String> getTags() {
         return tags;

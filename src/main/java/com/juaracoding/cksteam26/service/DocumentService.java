@@ -85,14 +85,14 @@ public class DocumentService implements IService<Document> {
         try {
             pageData = documentRepo.findAll(pageable);
             if (pageData.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC01FV001", request);
+                return GlobalResponse.dataIsNotFound("DOC02FV001", request);
             }
             mapResponse = transformPagination.transform(mapToModelMapper(pageData.getContent()),
                     pageData, "id", null);
 
         } catch (Exception e) {
             // System.out.println(e);
-            return GlobalResponse.serverError("DOC01FE001", request);
+            return GlobalResponse.serverError("DOC02FE001", request);
         }
         return GlobalResponse.dataIsFound(mapResponse, request);
     }
@@ -134,7 +134,7 @@ public class DocumentService implements IService<Document> {
             return GlobalResponse.dataIsFound(mapResponse, request);
         } catch (Exception e) {
             LoggingFile.logException("DocumentService", "findByParam", e);
-            return GlobalResponse.serverError("DOC01FE011", request);
+            return GlobalResponse.serverError("DOC02FE011", request);
         }
     }
 
@@ -167,6 +167,7 @@ public class DocumentService implements IService<Document> {
                             "Version must be 0 and Subversion must be 0 for root documents", request);
                 }
             } else {
+                System.out.println(referenceId);
                 Optional<UserDocumentPosition> userDocOpt = userDocumentPositionRepo
                         .findByUserIdAndDocumentId(userOpt.get().getId(), referenceId);
                 if (userDocOpt.isEmpty() || !"OWNER".equalsIgnoreCase(userDocOpt.get().getPosition())) {
@@ -177,7 +178,7 @@ public class DocumentService implements IService<Document> {
                 document.setId(null);
 
                 Optional<Document> latestRefDoc = documentRepo
-                        .findTopByReferenceDocumentIdOrderByVersionDescSubversionDesc(referenceId);
+                        .findTopByIdOrderByVersionDescSubversionDesc(referenceId);
                 if (latestRefDoc.isEmpty()) {
                     return GlobalResponse.customError("DOC02FV027", "Reference document not found", request);
                 }
@@ -225,20 +226,18 @@ public class DocumentService implements IService<Document> {
 
             userDocumentPositionRepo.save(userDocPosition);
 
-
-            return GlobalResponse.dataSavedSuccessfully(mapToModelMapper(savedDoc),request);
+            return GlobalResponse.dataSavedSuccessfully(mapToModelMapper(savedDoc), request);
         } catch (Exception e) {
             LoggingFile.logException(className, "save(Document document, HttpServletRequest request)", e);
             return GlobalResponse.serverError("DOC02FE021", request);
         }
-
 
     }
 
     @Override
     public ResponseEntity<Object> findById(Long documentId, HttpServletRequest request) {
         if (documentId == null || documentId == 0) {
-            return GlobalResponse.objectNull("DOC02FV031", request);
+            return GlobalResponse.objectNull("DOC02FV033", request);
         }
 
         try {
@@ -267,7 +266,8 @@ public class DocumentService implements IService<Document> {
             dto.setAnnotationCount(annotationRepo.countByDocumentId(documentId));
 
             // Populate name from owner
-            Optional<UserDocumentPosition> userDocPos = userDocumentPositionRepo.findByDocumentIdAndPosition(documentId, "OWNER");
+            Optional<UserDocumentPosition> userDocPos = userDocumentPositionRepo.findByDocumentIdAndPosition(documentId,
+                    "OWNER");
             if (userDocPos.isPresent()) {
                 User ownerUser = userDocPos.get().getUser();
                 dto.setName(ownerUser.getName());
@@ -309,7 +309,10 @@ public class DocumentService implements IService<Document> {
 
     public RespDocumentDTO mapToModelMapper(Document document) {
         RespDocumentDTO respDocumentDTO = modelMapper.map(document, RespDocumentDTO.class);
-         respDocumentDTO.setDocumentId(document.getId());
+        respDocumentDTO.setDocumentId(document.getId());
+        respDocumentDTO.setPublicVisibility(document.getPublicVisibility());
+        respDocumentDTO.setIsPrivate(document.getPrivate());
+        respDocumentDTO.setIsAnnotable(document.getAnnotable());
         return respDocumentDTO;
     }
 
@@ -326,7 +329,7 @@ public class DocumentService implements IService<Document> {
     }
 
     public ResponseEntity<Object> searchByKeyword(String keyword, Pageable pageable, HttpServletRequest request) {
-         try {
+        try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             Long userId = null;
             if (username != null) {
@@ -344,10 +347,10 @@ public class DocumentService implements IService<Document> {
             }
 
             if (page.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC01FV031", request);
+                return GlobalResponse.dataIsNotFound("DOC02FV035", request);
             }
 
-             List<RespDocumentDTO> dtoList = page.getContent().stream()
+            List<RespDocumentDTO> dtoList = page.getContent().stream()
                     .map(doc -> {
                         RespDocumentDTO dto = mapToModelMapper(doc);
 
@@ -372,10 +375,33 @@ public class DocumentService implements IService<Document> {
             Map<String, Object> mapResponse = transformPagination.transform(dtoList, page, "title", keyword);
 
             return GlobalResponse.dataIsFound(mapResponse, request);
-
         } catch (Exception e) {
-            return GlobalResponse.serverError("DOC01FE031", request);
+            return GlobalResponse.serverError("DOC02FE031", request);
         }
     }
 
+    public ResponseEntity<Object> findRelatedDocuments(Long referenceDocumentId, HttpServletRequest request) {
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            Long userId = null;
+            if (username != null) {
+                Optional<User> userOpt = userRepo.findByUsername(username);
+                if (userOpt.isPresent()) {
+                    userId = userOpt.get().getId();
+                }
+            }
+
+            List<Document> documents = documentRepo.findRelatedDocumentsById(referenceDocumentId, userId);
+
+            if (documents.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV041", request);
+            }
+
+            return GlobalResponse.dataIsFound(mapToModelMapper(documents), request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(className, "findRelatedDocuments", e);
+            return GlobalResponse.serverError("DOC02FE041", request);
+        }
+    }
 }

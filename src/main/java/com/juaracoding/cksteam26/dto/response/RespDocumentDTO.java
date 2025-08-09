@@ -35,15 +35,13 @@ public class RespDocumentDTO {
     private Boolean publicVisibility;
 
     private Boolean isPrivate;
+    private Boolean isAnnotable;
     private List<RespAnnotationDTO> annotations;
     private List<RespTagDTO> tags;
     private String name;
     private Long annotationCount;
     private String username;
 
-    public void setPrivate(Boolean aPrivate) {
-        isPrivate = aPrivate;
-    }
 
     public List<RespTagDTO> getTags() {
         return tags;
@@ -163,5 +161,29 @@ public class RespDocumentDTO {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public Boolean getPublicVisibility() {
+        return publicVisibility;
+    }
+
+    public void setPublicVisibility(Boolean publicVisibility) {
+        this.publicVisibility = publicVisibility;
+    }
+
+    public Boolean getIsPrivate() {
+        return isPrivate;
+    }
+
+    public void setIsPrivate(Boolean isPrivate) {
+        this.isPrivate = isPrivate;
+    }
+
+    public Boolean getIsAnnotable() {
+        return isAnnotable;
+    }
+
+    public void setIsAnnotable(Boolean annotable) {
+        isAnnotable = annotable;
     }
 }

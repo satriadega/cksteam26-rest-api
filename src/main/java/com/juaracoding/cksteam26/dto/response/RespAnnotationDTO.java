@@ -28,6 +28,8 @@ public class RespAnnotationDTO {
 
     private List<RespTagDTO> tags;
 
+    private java.util.Date createdAt;
+
     public Boolean getVerified() {
         return isVerified;
     }
@@ -99,5 +101,12 @@ public class RespAnnotationDTO {
     public void setDescription(String description) {
         this.description = description;
     }
-}
 
+    public java.util.Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.util.Date createdAt) {
+        this.createdAt = createdAt;
+    }
+}
