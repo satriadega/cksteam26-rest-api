@@ -46,7 +46,15 @@ public class ListApplianceDocumentVerifierController {
             @Valid @RequestBody ValUpdateApplianceVerifierDTO valUpdateApplianceDTO,
             HttpServletRequest request) {
 
-        ListApplianceDocumentVerifier model = listApplianceDocumentVerifierService.mapToModelMapper(documentId, valUpdateApplianceDTO.getUserId(), valUpdateApplianceDTO.getIsAccepted());
-        return listApplianceDocumentVerifierService.update(model, request);
+        return listApplianceDocumentVerifierService.update(documentId, valUpdateApplianceDTO, request);
     }
+
+    @GetMapping
+    public ResponseEntity<Object> getAllListApplianceVerifier(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        return listApplianceDocumentVerifierService.findAllByOwnerDocumentUserId(page, size, request);
+    }
+
 }

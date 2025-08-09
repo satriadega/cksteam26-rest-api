@@ -20,6 +20,9 @@ public class ListApplianceDocumentVerifier {
     @Column(name = "UserId", nullable = false)
     private Long userId;
 
+    @Column(name = "OwnerDocumentUserId", nullable = false)
+    private Long ownerDocumentUserId;
+
     @Column(name = "IsAccepted", nullable = false, columnDefinition = "bit default 0")
     private Boolean isAccepted;
 
@@ -33,14 +36,6 @@ public class ListApplianceDocumentVerifier {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Boolean getAccepted() {
-        return isAccepted;
-    }
-
-    public void setAccepted(Boolean accepted) {
-        isAccepted = accepted;
     }
 
     public Long getDocumentId() {
@@ -57,6 +52,14 @@ public class ListApplianceDocumentVerifier {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Long getOwnerDocumentUserId() {
+        return ownerDocumentUserId;
+    }
+
+    public void setOwnerDocumentUserId(Long ownerDocumentUserId) {
+        this.ownerDocumentUserId = ownerDocumentUserId;
     }
 
     public Boolean getIsAccepted() {

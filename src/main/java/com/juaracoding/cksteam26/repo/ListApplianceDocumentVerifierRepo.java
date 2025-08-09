@@ -9,6 +9,8 @@ Version 1.0
 */
 
 import com.juaracoding.cksteam26.model.ListApplianceDocumentVerifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 
@@ -22,5 +24,9 @@ public interface ListApplianceDocumentVerifierRepo extends JpaRepository<ListApp
 
     @Modifying
     void deleteByDocumentIdAndUserId(Long documentId, Long userId);
+
+    Page<ListApplianceDocumentVerifier> findAllByOwnerDocumentUserId(Long ownerDocumentUserId, Pageable pageable);
+
+    Optional<ListApplianceDocumentVerifier> findByDocumentIdAndUserId(Long documentId, Long userId);
 
 }

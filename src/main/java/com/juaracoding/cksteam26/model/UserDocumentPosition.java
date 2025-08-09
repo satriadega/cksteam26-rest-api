@@ -1,10 +1,14 @@
 package com.juaracoding.cksteam26.model;
 
 import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
-@Table(name = "UserDocumentPosition")
+@Table(name = "UserDocumentPosition",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_document_user_position",
+                columnNames = {"DocumentId", "UserId", "Position"}))
 public class UserDocumentPosition {
 
     @Id
@@ -14,12 +18,14 @@ public class UserDocumentPosition {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DocumentId",
-            foreignKey = @ForeignKey(name = "fk-udv-document"))
+            foreignKey = @ForeignKey(name = "fk_udv_document"),
+            nullable = false)
     private Document document;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId",
-            foreignKey = @ForeignKey(name = "fk-udv-user"))
+            foreignKey = @ForeignKey(name = "fk_udv_user"),
+            nullable = false)
     private User user;
 
     @Column(name = "IsVerified", nullable = false)
@@ -35,6 +41,8 @@ public class UserDocumentPosition {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "UpdatedAt")
     private Date updatedAt;
+
+    // getters & setters
 
     public Long getUserDocumentVerifierId() {
         return userDocumentVerifierId;

@@ -10,20 +10,26 @@ Version 1.0
 
 import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespListApplianceVerifierDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValUpdateApplianceVerifierDTO;
 import com.juaracoding.cksteam26.model.*;
 import com.juaracoding.cksteam26.repo.*;
 import com.juaracoding.cksteam26.security.TokenExtractor;
 import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -54,24 +60,27 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
     @Autowired
     ModelMapper modelMapper;
 
+    @Autowired
+    TransformPagination transformPagination;
+
     @Override
     public ResponseEntity<Object> save(ListApplianceDocumentVerifier listApplianceDocumentVerifier, HttpServletRequest request) {
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             if (username == null) {
-                return GlobalResponse.customError("DOC05FV001", "Unauthorized", request);
+                return GlobalResponse.customError("DOC05FV011", "Unauthorized", request);
             }
 
             Optional<User> userOpt = userRepo.findByUsername(username);
             if (userOpt.isEmpty()) {
-                return GlobalResponse.customError("DOC05FV002", "Unauthorized", request);
+                return GlobalResponse.customError("DOC05FV012", "Unauthorized", request);
             }
 
             User user = userOpt.get();
             Long userId = user.getId();
 
             if (listApplianceDocumentVerifier.getDocumentId() == null) {
-                return GlobalResponse.customError("DOC05FV002", "Document ID is required", request);
+                return GlobalResponse.customError("DOC05FV013", "Document ID is required", request);
             }
 
             Optional<Document> documentOpt = documentRepo.findAccessibleDocumentById(
@@ -79,24 +88,26 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             );
 
             if (documentOpt.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC05FV001", request);
+                return GlobalResponse.dataIsNotFound("DOC05FV014", request);
             }
 
             Document document = documentOpt.get();
 
             if (!Boolean.TRUE.equals(document.getAnnotable())) {
-                return GlobalResponse.customError("DOC05FV003", "Document is not annotable", request);
+                return GlobalResponse.customError("DOC05FV015", "Document is not annotable", request);
             }
 
             Optional<UserDocumentPosition> userDocumentPositionOpt = userDocumentPositionRepo.findByDocumentIdAndPosition(
                     listApplianceDocumentVerifier.getDocumentId(), "OWNER"
             );
 
+            User ownerUser = null;
+
             if (userDocumentPositionOpt.isPresent()) {
-                User ownerUser = userDocumentPositionOpt.get().getUser();
+                ownerUser = userDocumentPositionOpt.get().getUser();
 
                 if (ownerUser.getId().equals(userId)) {
-                    return GlobalResponse.customError("DOC05FV004", "Owner cannot do this request", request);
+                    return GlobalResponse.customError("DOC05FV016", "Owner cannot do this request", request);
                 }
 
                 ownerUser.setUpdatedAt(new Date());
@@ -113,6 +124,8 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
                 ownerUser.setNotificationCounter((notifCounter == null ? 1 : notifCounter + 1));
 
                 userRepo.save(ownerUser);
+            } else {
+                return GlobalResponse.customError("DOC05FV017", "Owner user not found", request);
             }
 
             listApplianceDocumentVerifier.setId(null);
@@ -120,6 +133,7 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             listApplianceDocumentVerifier.setDocumentId(document.getReferenceDocumentId());
             listApplianceDocumentVerifier.setUserId(userId);
             listApplianceDocumentVerifier.setIsAccepted(false);
+            listApplianceDocumentVerifier.setOwnerDocumentUserId(ownerUser.getId());
 
             listApplianceDocumentVerifierRepo.save(listApplianceDocumentVerifier);
 
@@ -136,9 +150,10 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
 
         } catch (Exception e) {
             LoggingFile.logException(getClass().getSimpleName(), "save", e);
-            return GlobalResponse.serverError("DOC05FE001", request);
+            return GlobalResponse.serverError("DOC05FE011", request);
         }
     }
+
 
     @Override
     public ResponseEntity<Object> update(Long id, ListApplianceDocumentVerifier listApplianceDocumentVerifier, HttpServletRequest request) {
@@ -146,40 +161,48 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
     }
 
 
-    public ResponseEntity<Object> update(ListApplianceDocumentVerifier model, HttpServletRequest request) {
+    public ResponseEntity<Object> update(Long documentId, ValUpdateApplianceVerifierDTO valUpdateApplianceDTO, HttpServletRequest request) {
         try {
-            System.out.println(model.getIsAccepted());
-            System.out.println(model.getUserId());
-            String username = tokenExtractor.extractUsernameFromRequest(request);
-            if (username == null || username.isEmpty()) {
+            String tokenUsername = tokenExtractor.extractUsernameFromRequest(request);
+            if (tokenUsername == null || tokenUsername.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV021", request);
             }
 
-            Optional<User> userOpt = userRepo.findByUsername(username);
-            if (userOpt.isEmpty()) {
+            Optional<User> tokenUserOpt = userRepo.findByUsername(tokenUsername);
+            if (tokenUserOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV022", request);
             }
-            Long userId = userOpt.get().getId();
+            Long tokenUserId = tokenUserOpt.get().getId();
 
             Optional<UserDocumentPosition> udpOpt = userDocumentPositionRepo.findByDocumentIdAndUserIdAndPosition(
-                    model.getDocumentId(), userId, "OWNER");
-
+                    documentId, tokenUserId, "OWNER");
             if (udpOpt.isEmpty()) {
                 return GlobalResponse.customError("DOC05FV023", "Forbidden", request);
             }
 
-            Optional<ListApplianceDocumentVerifier> existingOpt = listApplianceDocumentVerifierRepo.findByDocumentId(model.getDocumentId());
+            Optional<User> userOpt = userRepo.findByUsername(valUpdateApplianceDTO.getUsername());
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV025", request);
+            }
+            Long userId = userOpt.get().getId();
+
+            Optional<ListApplianceDocumentVerifier> existingOpt = listApplianceDocumentVerifierRepo.findByDocumentIdAndUserId(documentId, userId);
             if (existingOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV024", request);
             }
-            if (Boolean.TRUE.equals(model.getAccepted())) {
-                ListApplianceDocumentVerifier result = listApplianceDocumentVerifierRepo.save(model);
+            ListApplianceDocumentVerifier existing = existingOpt.get();
+
+            if (Boolean.TRUE.equals(valUpdateApplianceDTO.getIsAccepted())) {
+                existing.setIsAccepted(true);
+                existing.setUserId(userId);
+
+                ListApplianceDocumentVerifier updated = listApplianceDocumentVerifierRepo.save(existing);
 
                 Document document = new Document();
-                document.setId(model.getDocumentId());
+                document.setId(documentId);
 
                 User user = new User();
-                user.setId(model.getUserId());
+                user.setId(userId);
 
                 UserDocumentPosition newUdp = new UserDocumentPosition();
                 newUdp.setDocument(document);
@@ -189,16 +212,19 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
 
                 userDocumentPositionRepo.save(newUdp);
 
-                annotationRepo.setIsVerifiedFalseByDocumentId(model.getDocumentId());
+                annotationRepo.setIsVerifiedFalseByDocumentId(documentId);
 
-                return GlobalResponse.dataSavedSuccessfully(result, request);
+                return GlobalResponse.dataSavedSuccessfully(updated, request);
             } else {
-                listApplianceDocumentVerifierRepo.deleteByDocumentIdAndUserId(model.getDocumentId(), model.getUserId());
-                return GlobalResponse.dataIsDeleted(request);
+                if (Boolean.TRUE.equals(existing.getIsAccepted())) {
+                    return GlobalResponse.customError("DOC05FV027", "Cannot delete verifier after acceptance", request);
+                } else {
+                    listApplianceDocumentVerifierRepo.deleteByDocumentIdAndUserId(documentId, userId);
+                    return GlobalResponse.dataIsDeleted(request);
+                }
             }
-
         } catch (Exception e) {
-            LoggingFile.logException("ListApplianceDocumentVerifierService", "update", e);
+            LoggingFile.logException(getClass().getSimpleName(), "update", e);
             return GlobalResponse.serverError("DOC05FE026", request);
         }
     }
@@ -217,25 +243,23 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
     @Override
     public ResponseEntity<Object> findById(Long documentId, HttpServletRequest request) {
         if (documentId == null || documentId == 0) {
-            return GlobalResponse.objectNull("DOC05FV011", request);
+            return GlobalResponse.objectNull("DOC05FV051", request);
         }
 
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
-            Long userId = null;
             if (username == null || username.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC05FV012", request);
+                return GlobalResponse.dataIsNotFound("DOC05FV052", request);
             }
 
             Optional<User> userOpt = userRepo.findByUsername(username);
             if (userOpt.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC05FV013", request);
+                return GlobalResponse.dataIsNotFound("DOC05FV053", request);
             }
-            userId = userOpt.get().getId();
 
             Optional<ListApplianceDocumentVerifier> verifierOpt = listApplianceDocumentVerifierRepo.findFirstByDocumentId(documentId);
             if (verifierOpt.isEmpty()) {
-                return GlobalResponse.dataIsNotFound("DOC05FV014", request);
+                return GlobalResponse.dataIsNotFound("DOC05FV054", request);
             }
 
             RespListApplianceVerifierDTO dto = mapToModelMapper(verifierOpt.get());
@@ -244,7 +268,55 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
 
         } catch (Exception e) {
             LoggingFile.logException(getClass().getSimpleName(), "findByDocumentId", e);
-            return GlobalResponse.serverError("DOC05FE011", request);
+            return GlobalResponse.serverError("DOC05FE051", request);
+        }
+    }
+
+    public ResponseEntity<Object> findAllByOwnerDocumentUserId(int page, int size, HttpServletRequest request) {
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV071", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV072", request);
+            }
+
+            Long ownerUserId = userOpt.get().getId();
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ListApplianceDocumentVerifier> pageData = listApplianceDocumentVerifierRepo.findAllByOwnerDocumentUserId(ownerUserId, pageable);
+
+            if (pageData.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV073", request);
+            }
+
+            List<RespListApplianceVerifierDTO> dtoList = pageData.getContent().stream().map(verifier -> {
+                RespListApplianceVerifierDTO dto = new RespListApplianceVerifierDTO();
+                dto.setDocumentId(verifier.getDocumentId());
+                dto.setAccepted(verifier.getIsAccepted());
+                dto.setCreatedAt(verifier.getCreatedAt());
+
+                Optional<User> userOpt2 = userRepo.findById(verifier.getUserId());
+                if (userOpt2.isPresent()) {
+                    User user = userOpt2.get();
+                    dto.setUsername(user.getUsername());
+                    dto.setName(user.getName());
+                    dto.setEmail(user.getEmail());
+                }
+
+                return dto;
+            }).toList();
+
+            Map<String, Object> mapResponse = transformPagination.transform(dtoList, pageData, null, null);
+
+            return GlobalResponse.dataIsFound(mapResponse, request);
+
+        } catch (Exception e) {
+            LoggingFile.logException("ListApplianceDocumentVerifierService", "findAllByOwnerDocumentUserId", e);
+            return GlobalResponse.serverError("DOC05FE071", request);
         }
     }
 
