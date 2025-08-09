@@ -17,6 +17,7 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -161,13 +162,7 @@ public class DocumentService implements IService<Document> {
             }
 
             Long referenceId = document.getReferenceDocumentId();
-            if (referenceId == null) {
-                if (document.getVersion() != 0 || document.getSubversion() != 0) {
-                    return GlobalResponse.customError("DOC02FV026",
-                            "Version must be 0 and Subversion must be 0 for root documents", request);
-                }
-            } else {
-                System.out.println(referenceId);
+            if (referenceId != null) {
                 Optional<UserDocumentPosition> userDocOpt = userDocumentPositionRepo
                         .findByUserIdAndDocumentId(userOpt.get().getId(), referenceId);
                 if (userDocOpt.isEmpty() || !"OWNER".equalsIgnoreCase(userDocOpt.get().getPosition())) {
@@ -175,15 +170,12 @@ public class DocumentService implements IService<Document> {
                             request);
                 }
 
-                document.setId(null);
-
-                Optional<Document> latestRefDoc = documentRepo
-                        .findTopByIdOrderByVersionDescSubversionDesc(referenceId);
-                if (latestRefDoc.isEmpty()) {
+                List<Document> latestDocs = documentRepo.findTopDocumentsByReferenceDocumentId(referenceId,
+                        PageRequest.of(0, 1));
+                if (latestDocs.isEmpty()) {
                     return GlobalResponse.customError("DOC02FV027", "Reference document not found", request);
                 }
-
-                Document latest = latestRefDoc.get();
+                Document latest = latestDocs.get(0);
 
                 int versionDiff = document.getVersion() - latest.getVersion();
                 int subversionDiff = document.getSubversion() - latest.getSubversion();
@@ -207,16 +199,21 @@ public class DocumentService implements IService<Document> {
             }
 
             User user = userOpt.get();
-
             document.setVerifiedAll(true);
             document.setAnnotable(true);
+            document.setId(null);
+
+            // Simpan dulu supaya dapat ID
             Document savedDoc = documentRepo.save(document);
 
-            if (savedDoc.getVersion() == 0 && savedDoc.getSubversion() == 0
-                    && savedDoc.getReferenceDocumentId() == null) {
+            // Atur referenceDocumentId sesuai root/child rule
+            if (referenceId == null) {
                 savedDoc.setReferenceDocumentId(savedDoc.getId());
-                documentRepo.save(savedDoc);
+            } else {
+                savedDoc.setReferenceDocumentId(referenceId);
             }
+
+            documentRepo.save(savedDoc);
 
             UserDocumentPosition userDocPosition = new UserDocumentPosition();
             userDocPosition.setUser(user);
@@ -231,7 +228,6 @@ public class DocumentService implements IService<Document> {
             LoggingFile.logException(className, "save(Document document, HttpServletRequest request)", e);
             return GlobalResponse.serverError("DOC02FE021", request);
         }
-
     }
 
     @Override

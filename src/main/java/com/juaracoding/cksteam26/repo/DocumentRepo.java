@@ -82,6 +82,14 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
     Optional<Document> findTopByIdOrderByVersionDescSubversionDesc(Long referenceDocumentId);
 
     @Query("""
+                SELECT d
+                FROM Document d
+                WHERE d.referenceDocumentId = :referenceId
+                ORDER BY d.version DESC, d.subversion DESC
+            """)
+    List<Document> findTopDocumentsByReferenceDocumentId(@Param("referenceId") Long referenceId, Pageable pageable);
+
+    @Query("""
                 select d
                 from Document d
                 left join UserDocumentPosition udp on udp.document = d
