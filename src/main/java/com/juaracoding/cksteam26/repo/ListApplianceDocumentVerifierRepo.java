@@ -10,6 +10,17 @@ Version 1.0
 
 import com.juaracoding.cksteam26.model.ListApplianceDocumentVerifier;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+
+import java.util.Optional;
 
 public interface ListApplianceDocumentVerifierRepo extends JpaRepository<ListApplianceDocumentVerifier, Long> {
+
+    Optional<ListApplianceDocumentVerifier> findFirstByDocumentId(Long documentId);
+
+    Optional<ListApplianceDocumentVerifier> findByDocumentId(Long documentId);
+
+    @Modifying
+    void deleteByDocumentIdAndUserId(Long documentId, Long userId);
+
 }

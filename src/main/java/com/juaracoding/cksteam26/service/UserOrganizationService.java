@@ -165,6 +165,7 @@ public class UserOrganizationService implements IService<Organization> {
         return null;
     }
 
+
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
         return null;

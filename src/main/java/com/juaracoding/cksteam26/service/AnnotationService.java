@@ -1,22 +1,9 @@
 package com.juaracoding.cksteam26.service;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
-import com.juaracoding.cksteam26.model.Annotation;
-import com.juaracoding.cksteam26.model.Document;
-import com.juaracoding.cksteam26.model.Tag;
-import com.juaracoding.cksteam26.model.User;
-import com.juaracoding.cksteam26.model.UserDocumentPosition;
+import com.juaracoding.cksteam26.model.*;
 import com.juaracoding.cksteam26.repo.AnnotationRepo;
 import com.juaracoding.cksteam26.repo.DocumentRepo;
 import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
@@ -24,8 +11,20 @@ import com.juaracoding.cksteam26.repo.UserRepo;
 import com.juaracoding.cksteam26.security.TokenExtractor;
 import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
-
+import com.juaracoding.cksteam26.util.TransformPagination;
 import jakarta.servlet.http.HttpServletRequest;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -48,6 +47,9 @@ public class AnnotationService implements IService<Annotation> {
 
     @Autowired
     TokenExtractor tokenExtractor;
+
+    @Autowired
+    private TransformPagination transformPagination;
 
 
     private String className = "AnnotationService";
@@ -139,6 +141,7 @@ public class AnnotationService implements IService<Annotation> {
         return null;
     }
 
+
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
         return null;
@@ -156,8 +159,77 @@ public class AnnotationService implements IService<Annotation> {
 
     @Override
     public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value, HttpServletRequest request) {
-        return null;
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV011", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV012", request);
+            }
+
+            Long ownerUserId = userOpt.get().getId();
+
+            Page<Annotation> page;
+
+            boolean noFilter = (value == null || value.trim().isEmpty());
+
+            if (noFilter) {
+                page = annotationRepo.findByOwnerUserId(ownerUserId, pageable);
+            } else {
+                switch (column.toLowerCase()) {
+                    case "selectedtext":
+                        page = annotationRepo.findBySelectedTextContainingIgnoreCaseAndOwnerUserId(value, ownerUserId, pageable);
+                        break;
+                    case "description":
+                        page = annotationRepo.findByDescriptionContainingIgnoreCaseAndOwnerUserId(value, ownerUserId, pageable);
+                        break;
+                    case "isverified":
+                        page = annotationRepo.findByIsVerifiedAndOwnerUserId(Boolean.parseBoolean(value), ownerUserId, pageable);
+                        break;
+                    case "startno":
+                        try {
+                            Integer startNo = Integer.parseInt(value);
+                            page = annotationRepo.findByStartNoAndOwnerUserId(startNo, ownerUserId, pageable);
+                        } catch (NumberFormatException e) {
+                            page = annotationRepo.findByOwnerUserId(ownerUserId, pageable);
+                        }
+                        break;
+                    case "endno":
+                        try {
+                            Integer endNo = Integer.parseInt(value);
+                            page = annotationRepo.findByEndNoAndOwnerUserId(endNo, ownerUserId, pageable);
+                        } catch (NumberFormatException e) {
+                            page = annotationRepo.findByOwnerUserId(ownerUserId, pageable);
+                        }
+                        break;
+                    default:
+                        page = annotationRepo.findByOwnerUserId(ownerUserId, pageable);
+                        break;
+                }
+            }
+
+            if (page.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV013", request);
+            }
+
+            List<RespAnnotationDTO> dtoList = page.getContent().stream().map(annotation -> {
+                RespAnnotationDTO dto = mapToAnnotationDTO(annotation);
+                return dto;
+            }).collect(Collectors.toList());
+
+            Map<String, Object> mapResponse = transformPagination.transform(dtoList, page, column, value);
+
+            return GlobalResponse.dataIsFound(mapResponse, request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(className, "findByParam", e);
+            return GlobalResponse.serverError("DOC04FE011", request);
+        }
     }
+
 
     public Annotation mapToAnnotation(ValAnnotationDTO dto, Document document, Long ownerUserId) {
         Annotation annotation = new Annotation();
@@ -178,5 +250,9 @@ public class AnnotationService implements IService<Annotation> {
 
         annotation.setTags(tagEntities);
         return annotation;
+    }
+
+    public RespAnnotationDTO mapToAnnotationDTO(Annotation annotation) {
+        return modelMapper.map(annotation, RespAnnotationDTO.class);
     }
 }

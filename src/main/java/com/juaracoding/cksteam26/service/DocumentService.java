@@ -8,11 +8,19 @@ Created on 23/07/25 03.11
 Version 1.0
 */
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
+import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
+import com.juaracoding.cksteam26.dto.response.RespTagDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
+import com.juaracoding.cksteam26.model.*;
+import com.juaracoding.cksteam26.repo.*;
+import com.juaracoding.cksteam26.security.JwtUtility;
+import com.juaracoding.cksteam26.security.TokenExtractor;
+import com.juaracoding.cksteam26.util.GlobalResponse;
+import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.TransformPagination;
+import jakarta.servlet.http.HttpServletRequest;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,28 +31,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.juaracoding.cksteam26.core.IService;
-import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
-import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
-import com.juaracoding.cksteam26.dto.response.RespTagDTO;
-import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
-import com.juaracoding.cksteam26.model.Annotation;
-import com.juaracoding.cksteam26.model.Document;
-import com.juaracoding.cksteam26.model.Tag;
-import com.juaracoding.cksteam26.model.User;
-import com.juaracoding.cksteam26.model.UserDocumentPosition;
-import com.juaracoding.cksteam26.repo.AnnotationRepo;
-import com.juaracoding.cksteam26.repo.DocumentRepo;
-import com.juaracoding.cksteam26.repo.TagRepo;
-import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
-import com.juaracoding.cksteam26.repo.UserRepo;
-import com.juaracoding.cksteam26.security.JwtUtility;
-import com.juaracoding.cksteam26.security.TokenExtractor;
-import com.juaracoding.cksteam26.util.GlobalResponse;
-import com.juaracoding.cksteam26.util.LoggingFile;
-import com.juaracoding.cksteam26.util.TransformPagination;
-
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -100,44 +90,99 @@ public class DocumentService implements IService<Document> {
 
     @Override
     public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value,
-            HttpServletRequest request) {
-        Page<Document> page;
-        Map<String, Object> mapResponse;
-
+                                              HttpServletRequest request) {
         try {
-            switch (column.toLowerCase()) {
-                case "title":
-                    page = documentRepo.findByTitleContainsIgnoreCase(value, pageable);
-                    break;
-                case "content":
-                    page = documentRepo.findByContentContainsIgnoreCase(value, pageable);
-                    break;
-                case "isverifiedall":
-                    page = documentRepo.findByIsVerifiedAll(Boolean.parseBoolean(value), pageable);
-                    break;
-                case "publicvisibility":
-                    page = documentRepo.findByPublicVisibility(Boolean.parseBoolean(value), pageable);
-                    break;
-                case "referencedocumentid":
-                    page = documentRepo.findByReferenceDocumentId(Long.parseLong(value), pageable);
-                    break;
-                case "version":
-                    page = documentRepo.findByVersion(Integer.parseInt(value), pageable);
-                    break;
-                case "subversion":
-                    page = documentRepo.findBySubversion(Integer.parseInt(value), pageable);
-                    break;
-                default:
-                    page = documentRepo.findAll(pageable);
-                    break;
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV011", request);
             }
-            mapResponse = transformPagination.transform(mapToModelMapper(page.getContent()), page, column, value);
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV012", request);
+            }
+
+            Long userId = userOpt.get().getId();
+
+            List<Long> documentIds = userDocumentPositionRepo.findDocumentIdsByUserId(userId)
+                    .stream()
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            if (documentIds.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV013", request);
+            }
+
+            Page<Document> page;
+
+            boolean noFilter = (value == null || value.trim().isEmpty());
+
+            if (noFilter) {
+                page = documentRepo.findByIdIn(documentIds, pageable);
+            } else {
+                switch (column.toLowerCase()) {
+                    case "title":
+                        page = documentRepo.findByTitleContainsIgnoreCaseAndIdIn(value, documentIds, pageable);
+                        break;
+                    case "content":
+                        page = documentRepo.findByContentContainsIgnoreCaseAndIdIn(value, documentIds, pageable);
+                        break;
+                    case "isverifiedall":
+                        page = documentRepo.findByIsVerifiedAllAndIdIn(Boolean.parseBoolean(value), documentIds, pageable);
+                        break;
+                    case "publicvisibility":
+                        page = documentRepo.findByPublicVisibilityAndIdIn(Boolean.parseBoolean(value), documentIds, pageable);
+                        break;
+                    case "referencedocumentid":
+                        page = documentRepo.findByReferenceDocumentIdAndIdIn(Long.parseLong(value), documentIds, pageable);
+                        break;
+                    case "version":
+                        page = documentRepo.findByVersionAndIdIn(Integer.parseInt(value), documentIds, pageable);
+                        break;
+                    case "subversion":
+                        page = documentRepo.findBySubversionAndIdIn(Integer.parseInt(value), documentIds, pageable);
+                        break;
+                    default:
+                        page = documentRepo.findByIdIn(documentIds, pageable);
+                        break;
+                }
+            }
+
+            if (page.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV014", request);
+            }
+
+            List<RespDocumentDTO> dtoList = page.getContent().stream().map(doc -> {
+                RespDocumentDTO dto = mapToModelMapper(doc);
+
+                List<Tag> tags = tagRepo.findTagsByDocumentId(doc.getId());
+                dto.setTags(tags.stream().map(this::mapToTagDTO).collect(Collectors.toList()));
+
+                dto.setAnnotationCount(annotationRepo.countByDocumentId(doc.getId()));
+
+                Optional<UserDocumentPosition> userDocPositions = userDocumentPositionRepo.findByDocumentId(doc.getId());
+                if (!userDocPositions.isEmpty()) {
+                    User anyUser = userDocPositions.get().getUser();
+                    if (anyUser != null) {
+                        dto.setName(anyUser.getName());
+                        dto.setUsername(anyUser.getUsername());
+                    }
+                }
+
+                return dto;
+            }).collect(Collectors.toList());
+
+            Map<String, Object> mapResponse = transformPagination.transform(dtoList, page, column, value);
+
             return GlobalResponse.dataIsFound(mapResponse, request);
+
         } catch (Exception e) {
-            LoggingFile.logException("DocumentService", "findByParam", e);
+            LoggingFile.logException(className, "findByParam", e);
             return GlobalResponse.serverError("DOC02FE011", request);
         }
     }
+
 
     @Override
     public ResponseEntity<Object> save(Document document, HttpServletRequest request) {
@@ -231,6 +276,11 @@ public class DocumentService implements IService<Document> {
     }
 
     @Override
+    public ResponseEntity<Object> update(Long id, Document document, HttpServletRequest request) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<Object> findById(Long documentId, HttpServletRequest request) {
         if (documentId == null || documentId == 0) {
             return GlobalResponse.objectNull("DOC02FV033", request);
@@ -277,11 +327,6 @@ public class DocumentService implements IService<Document> {
         }
     }
 
-    // NO UPDATE
-    @Override
-    public ResponseEntity<Object> update(Long id, Document document, HttpServletRequest request) {
-        return null;
-    }
 
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {

@@ -1,15 +1,14 @@
 package com.juaracoding.cksteam26.repo;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.juaracoding.cksteam26.model.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.juaracoding.cksteam26.model.Document;
+import java.util.List;
+import java.util.Optional;
 
 public interface DocumentRepo extends JpaRepository<Document, Long> {
 
@@ -34,8 +33,8 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 )
             """)
     Page<Document> searchDocumentsByKeyword(@Param("keyword") String keyword,
-            @Param("userId") Long userId,
-            Pageable pageable);
+                                            @Param("userId") Long userId,
+                                            Pageable pageable);
 
     @Query("""
                 select d
@@ -65,22 +64,6 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             """)
     Optional<Document> findAccessibleDocumentById(@Param("documentId") Long documentId, @Param("userId") Long userId);
 
-    Page<Document> findByTitleContainsIgnoreCase(String title, Pageable pageable);
-
-    Page<Document> findByContentContainsIgnoreCase(String content, Pageable pageable);
-
-    Page<Document> findByIsVerifiedAll(Boolean isVerifiedAll, Pageable pageable);
-
-    Page<Document> findByPublicVisibility(Boolean publicVisibility, Pageable pageable);
-
-    Page<Document> findByReferenceDocumentId(Long referenceDocumentId, Pageable pageable);
-
-    Page<Document> findByVersion(Integer version, Pageable pageable);
-
-    Page<Document> findBySubversion(Integer subversion, Pageable pageable);
-
-    Optional<Document> findTopByIdOrderByVersionDescSubversionDesc(Long referenceDocumentId);
-
     @Query("""
                 SELECT d
                 FROM Document d
@@ -103,5 +86,22 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 )
             """)
     List<Document> findRelatedDocumentsById(@Param("referenceDocumentId") Long referenceDocumentId,
-            @Param("userId") Long userId);
+                                            @Param("userId") Long userId);
+
+    Page<Document> findByTitleContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
+
+
+    Page<Document> findByContentContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
+
+    Page<Document> findByIsVerifiedAllAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
+
+    Page<Document> findByPublicVisibilityAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
+
+    Page<Document> findByReferenceDocumentIdAndIdIn(long l, List<Long> documentIds, Pageable pageable);
+
+    Page<Document> findByVersionAndIdIn(int i, List<Long> documentIds, Pageable pageable);
+
+    Page<Document> findBySubversionAndIdIn(int i, List<Long> documentIds, Pageable pageable);
+
+    Page<Document> findByIdIn(List<Long> documentIds, Pageable pageable);
 }

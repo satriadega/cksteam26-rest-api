@@ -8,17 +8,16 @@ Created on 05/08/25 02.54
 Version 1.0
 */
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.juaracoding.cksteam26.config.MainConfig;
 import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
 import com.juaracoding.cksteam26.service.AnnotationService;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("annotation")
@@ -29,7 +28,52 @@ public class AnnotationController {
 
     @PostMapping
     public Object save(@Valid @RequestBody ValAnnotationDTO valAnnotationDTO,
-            HttpServletRequest request) {
+                       HttpServletRequest request) {
         return annotationService.save(valAnnotationDTO, request);
+    }
+
+    @GetMapping("/{sort}/{sortBy}/{page}")
+    public Object findByParam(
+            @PathVariable Integer page,
+            @PathVariable("sortBy") String sortBy,
+            @PathVariable String sort,
+            @RequestParam(required = false) String column,
+            @RequestParam(required = false) String value,
+            HttpServletRequest request) {
+
+        Pageable pageable;
+        String resolvedSortBy = resolveSortBy(sortBy);
+
+        if ("asc".equalsIgnoreCase(sort)) {
+            pageable = PageRequest.of(page, MainConfig.PAGE_SIZE, Sort.by(resolvedSortBy));
+        } else {
+            pageable = PageRequest.of(page, MainConfig.PAGE_SIZE, Sort.by(resolvedSortBy).descending());
+        }
+
+        return annotationService.findByParam(pageable, column, value, request);
+    }
+
+    private String resolveSortBy(String input) {
+        if (input == null) return "id";
+        switch (input.toLowerCase()) {
+            case "selectedtext":
+                return "selectedText";
+            case "description":
+                return "description";
+            case "owneruserid":
+                return "ownerUserId";
+            case "isverified":
+                return "isVerified";
+            case "startno":
+                return "startNo";
+            case "endno":
+                return "endNo";
+            case "createdat":
+                return "createdAt";
+            case "updatedat":
+                return "updatedAt";
+            default:
+                return "id";
+        }
     }
 }

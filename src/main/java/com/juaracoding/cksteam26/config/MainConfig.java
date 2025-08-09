@@ -15,6 +15,8 @@ import javax.sql.DataSource;
 @Configuration
 public class MainConfig {
 
+    public static final int PAGE_SIZE = 10;
+    
     @Autowired
     private Environment env;
 
@@ -30,7 +32,7 @@ public class MainConfig {
     }
 
     @Bean
-    public ModelMapper getModelMapper(){
+    public ModelMapper getModelMapper() {
         return new ModelMapper();
     }
 }

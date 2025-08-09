@@ -9,12 +9,14 @@ Version 1.0
 */
 
 import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.response.RespListApplianceVerifierDTO;
 import com.juaracoding.cksteam26.model.*;
 import com.juaracoding.cksteam26.repo.*;
 import com.juaracoding.cksteam26.security.TokenExtractor;
 import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
 import jakarta.servlet.http.HttpServletRequest;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -46,17 +48,23 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
     @Autowired
     UserDocumentPositionRepo userDocumentPositionRepo;
 
+    @Autowired
+    AnnotationRepo annotationRepo;
+
+    @Autowired
+    ModelMapper modelMapper;
+
     @Override
     public ResponseEntity<Object> save(ListApplianceDocumentVerifier listApplianceDocumentVerifier, HttpServletRequest request) {
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             if (username == null) {
-                return GlobalResponse.customError("DOC05FA001", "Unauthorized", request);
+                return GlobalResponse.customError("DOC05FV001", "Unauthorized", request);
             }
 
             Optional<User> userOpt = userRepo.findByUsername(username);
             if (userOpt.isEmpty()) {
-                return GlobalResponse.customError("DOC05FA002", "Unauthorized", request);
+                return GlobalResponse.customError("DOC05FV002", "Unauthorized", request);
             }
 
             User user = userOpt.get();
@@ -132,11 +140,69 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
         }
     }
 
-
     @Override
     public ResponseEntity<Object> update(Long id, ListApplianceDocumentVerifier listApplianceDocumentVerifier, HttpServletRequest request) {
         return null;
     }
+
+
+    public ResponseEntity<Object> update(ListApplianceDocumentVerifier model, HttpServletRequest request) {
+        try {
+            System.out.println(model.getIsAccepted());
+            System.out.println(model.getUserId());
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV021", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV022", request);
+            }
+            Long userId = userOpt.get().getId();
+
+            Optional<UserDocumentPosition> udpOpt = userDocumentPositionRepo.findByDocumentIdAndUserIdAndPosition(
+                    model.getDocumentId(), userId, "OWNER");
+
+            if (udpOpt.isEmpty()) {
+                return GlobalResponse.customError("DOC05FV023", "Forbidden", request);
+            }
+
+            Optional<ListApplianceDocumentVerifier> existingOpt = listApplianceDocumentVerifierRepo.findByDocumentId(model.getDocumentId());
+            if (existingOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV024", request);
+            }
+            if (Boolean.TRUE.equals(model.getAccepted())) {
+                ListApplianceDocumentVerifier result = listApplianceDocumentVerifierRepo.save(model);
+
+                Document document = new Document();
+                document.setId(model.getDocumentId());
+
+                User user = new User();
+                user.setId(model.getUserId());
+
+                UserDocumentPosition newUdp = new UserDocumentPosition();
+                newUdp.setDocument(document);
+                newUdp.setUser(user);
+                newUdp.setPosition("VERIFIER");
+                newUdp.setIsVerified(false);
+
+                userDocumentPositionRepo.save(newUdp);
+
+                annotationRepo.setIsVerifiedFalseByDocumentId(model.getDocumentId());
+
+                return GlobalResponse.dataSavedSuccessfully(result, request);
+            } else {
+                listApplianceDocumentVerifierRepo.deleteByDocumentIdAndUserId(model.getDocumentId(), model.getUserId());
+                return GlobalResponse.dataIsDeleted(request);
+            }
+
+        } catch (Exception e) {
+            LoggingFile.logException("ListApplianceDocumentVerifierService", "update", e);
+            return GlobalResponse.serverError("DOC05FE026", request);
+        }
+    }
+
 
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
@@ -149,9 +215,39 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
     }
 
     @Override
-    public ResponseEntity<Object> findById(Long id, HttpServletRequest request) {
-        return null;
+    public ResponseEntity<Object> findById(Long documentId, HttpServletRequest request) {
+        if (documentId == null || documentId == 0) {
+            return GlobalResponse.objectNull("DOC05FV011", request);
+        }
+
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            Long userId = null;
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV012", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV013", request);
+            }
+            userId = userOpt.get().getId();
+
+            Optional<ListApplianceDocumentVerifier> verifierOpt = listApplianceDocumentVerifierRepo.findFirstByDocumentId(documentId);
+            if (verifierOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC05FV014", request);
+            }
+
+            RespListApplianceVerifierDTO dto = mapToModelMapper(verifierOpt.get());
+
+            return GlobalResponse.dataIsFound(dto, request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(getClass().getSimpleName(), "findByDocumentId", e);
+            return GlobalResponse.serverError("DOC05FE011", request);
+        }
     }
+
 
     @Override
     public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value, HttpServletRequest request) {
@@ -162,6 +258,19 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
         ListApplianceDocumentVerifier entity = new ListApplianceDocumentVerifier();
         entity.setDocumentId(id);
         return entity;
+    }
+
+    public ListApplianceDocumentVerifier mapToModelMapper(Long documentId, Long userId, Boolean isAccepted) {
+        ListApplianceDocumentVerifier entity = new ListApplianceDocumentVerifier();
+        entity.setDocumentId(documentId);
+        entity.setUserId(userId);
+        entity.setIsAccepted(isAccepted);
+        return entity;
+    }
+
+
+    private RespListApplianceVerifierDTO mapToModelMapper(ListApplianceDocumentVerifier verifier) {
+        return modelMapper.map(verifier, RespListApplianceVerifierDTO.class);
     }
 
 }
