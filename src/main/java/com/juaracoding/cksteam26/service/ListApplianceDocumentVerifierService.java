@@ -8,16 +8,11 @@ Created on 05/08/25 11.58
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.core.IService;
-import com.juaracoding.cksteam26.dto.response.RespListApplianceVerifierDTO;
-import com.juaracoding.cksteam26.dto.validasi.ValUpdateApplianceVerifierDTO;
-import com.juaracoding.cksteam26.model.*;
-import com.juaracoding.cksteam26.repo.*;
-import com.juaracoding.cksteam26.security.TokenExtractor;
-import com.juaracoding.cksteam26.util.GlobalResponse;
-import com.juaracoding.cksteam26.util.LoggingFile;
-import com.juaracoding.cksteam26.util.TransformPagination;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,10 +22,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.response.RespListApplianceVerifierDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValUpdateApplianceVerifierDTO;
+import com.juaracoding.cksteam26.model.Document;
+import com.juaracoding.cksteam26.model.ListApplianceDocumentVerifier;
+import com.juaracoding.cksteam26.model.Notification;
+import com.juaracoding.cksteam26.model.User;
+import com.juaracoding.cksteam26.model.UserDocumentPosition;
+import com.juaracoding.cksteam26.repo.AnnotationRepo;
+import com.juaracoding.cksteam26.repo.DocumentRepo;
+import com.juaracoding.cksteam26.repo.ListApplianceDocumentVerifierRepo;
+import com.juaracoding.cksteam26.repo.NotificationRepo;
+import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
+import com.juaracoding.cksteam26.repo.UserRepo;
+import com.juaracoding.cksteam26.security.TokenExtractor;
+import com.juaracoding.cksteam26.util.GlobalResponse;
+import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.TransformPagination;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
@@ -64,7 +75,8 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
     TransformPagination transformPagination;
 
     @Override
-    public ResponseEntity<Object> save(ListApplianceDocumentVerifier listApplianceDocumentVerifier, HttpServletRequest request) {
+    public ResponseEntity<Object> save(ListApplianceDocumentVerifier listApplianceDocumentVerifier,
+            HttpServletRequest request) {
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             if (username == null) {
@@ -84,8 +96,7 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             }
 
             Optional<Document> documentOpt = documentRepo.findAccessibleDocumentById(
-                    listApplianceDocumentVerifier.getDocumentId(), userId
-            );
+                    listApplianceDocumentVerifier.getDocumentId(), userId);
 
             if (documentOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV014", request);
@@ -97,9 +108,9 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
                 return GlobalResponse.customError("DOC05FV015", "Document is not annotable", request);
             }
 
-            Optional<UserDocumentPosition> userDocumentPositionOpt = userDocumentPositionRepo.findByDocumentIdAndPosition(
-                    listApplianceDocumentVerifier.getDocumentId(), "OWNER"
-            );
+            Optional<UserDocumentPosition> userDocumentPositionOpt = userDocumentPositionRepo
+                    .findByDocumentIdAndPosition(
+                            listApplianceDocumentVerifier.getDocumentId(), "OWNER");
 
             User ownerUser = null;
 
@@ -154,14 +165,14 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
         }
     }
 
-
     @Override
-    public ResponseEntity<Object> update(Long id, ListApplianceDocumentVerifier listApplianceDocumentVerifier, HttpServletRequest request) {
+    public ResponseEntity<Object> update(Long id, ListApplianceDocumentVerifier listApplianceDocumentVerifier,
+            HttpServletRequest request) {
         return null;
     }
 
-
-    public ResponseEntity<Object> update(Long documentId, ValUpdateApplianceVerifierDTO valUpdateApplianceDTO, HttpServletRequest request) {
+    public ResponseEntity<Object> update(Long documentId, ValUpdateApplianceVerifierDTO valUpdateApplianceDTO,
+            HttpServletRequest request) {
         try {
             String tokenUsername = tokenExtractor.extractUsernameFromRequest(request);
             if (tokenUsername == null || tokenUsername.isEmpty()) {
@@ -186,7 +197,8 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             }
             Long userId = userOpt.get().getId();
 
-            Optional<ListApplianceDocumentVerifier> existingOpt = listApplianceDocumentVerifierRepo.findByDocumentIdAndUserId(documentId, userId);
+            Optional<ListApplianceDocumentVerifier> existingOpt = listApplianceDocumentVerifierRepo
+                    .findByDocumentIdAndUserId(documentId, userId);
             if (existingOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV024", request);
             }
@@ -229,7 +241,6 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
         }
     }
 
-
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
         return null;
@@ -257,7 +268,10 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
                 return GlobalResponse.dataIsNotFound("DOC05FV053", request);
             }
 
-            Optional<ListApplianceDocumentVerifier> verifierOpt = listApplianceDocumentVerifierRepo.findFirstByDocumentId(documentId);
+            System.out.println(documentId);
+
+            Optional<ListApplianceDocumentVerifier> verifierOpt = listApplianceDocumentVerifierRepo
+                    .findFirstByDocumentId(documentId);
             if (verifierOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV054", request);
             }
@@ -287,7 +301,8 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             Long ownerUserId = userOpt.get().getId();
 
             Pageable pageable = PageRequest.of(page, size);
-            Page<ListApplianceDocumentVerifier> pageData = listApplianceDocumentVerifierRepo.findAllByOwnerDocumentUserId(ownerUserId, pageable);
+            Page<ListApplianceDocumentVerifier> pageData = listApplianceDocumentVerifierRepo
+                    .findAllByOwnerDocumentUserId(ownerUserId, pageable);
 
             if (pageData.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV073", request);
@@ -320,9 +335,9 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
         }
     }
 
-
     @Override
-    public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value, HttpServletRequest request) {
+    public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value,
+            HttpServletRequest request) {
         return null;
     }
 
@@ -339,7 +354,6 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
         entity.setIsAccepted(isAccepted);
         return entity;
     }
-
 
     private RespListApplianceVerifierDTO mapToModelMapper(ListApplianceDocumentVerifier verifier) {
         return modelMapper.map(verifier, RespListApplianceVerifierDTO.class);

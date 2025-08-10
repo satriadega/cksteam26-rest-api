@@ -22,8 +22,6 @@ public interface UserDocumentPositionRepo extends JpaRepository<UserDocumentPosi
 
     Optional<UserDocumentPosition> findByUserIdAndDocumentId(Long userId, Long documentId);
 
-    Optional<UserDocumentPosition> findByDocumentId(Long documentId);
-
     Optional<UserDocumentPosition> findByDocumentIdAndPosition(Long documentId, String position);
 
     @Query("SELECT udp.document.id FROM UserDocumentPosition udp WHERE udp.user.id = :userId")

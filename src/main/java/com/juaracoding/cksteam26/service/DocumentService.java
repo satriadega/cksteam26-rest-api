@@ -8,19 +8,11 @@ Created on 23/07/25 03.11
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.core.IService;
-import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
-import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
-import com.juaracoding.cksteam26.dto.response.RespTagDTO;
-import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
-import com.juaracoding.cksteam26.model.*;
-import com.juaracoding.cksteam26.repo.*;
-import com.juaracoding.cksteam26.security.JwtUtility;
-import com.juaracoding.cksteam26.security.TokenExtractor;
-import com.juaracoding.cksteam26.util.GlobalResponse;
-import com.juaracoding.cksteam26.util.LoggingFile;
-import com.juaracoding.cksteam26.util.TransformPagination;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +23,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
+import com.juaracoding.cksteam26.dto.response.RespDocumentDTO;
+import com.juaracoding.cksteam26.dto.response.RespTagDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValDocumentDTO;
+import com.juaracoding.cksteam26.model.Annotation;
+import com.juaracoding.cksteam26.model.Document;
+import com.juaracoding.cksteam26.model.Tag;
+import com.juaracoding.cksteam26.model.User;
+import com.juaracoding.cksteam26.model.UserDocumentPosition;
+import com.juaracoding.cksteam26.repo.AnnotationRepo;
+import com.juaracoding.cksteam26.repo.DocumentRepo;
+import com.juaracoding.cksteam26.repo.TagRepo;
+import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
+import com.juaracoding.cksteam26.repo.UserRepo;
+import com.juaracoding.cksteam26.security.JwtUtility;
+import com.juaracoding.cksteam26.security.TokenExtractor;
+import com.juaracoding.cksteam26.util.GlobalResponse;
+import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.TransformPagination;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
@@ -90,7 +100,7 @@ public class DocumentService implements IService<Document> {
 
     @Override
     public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value,
-                                              HttpServletRequest request) {
+            HttpServletRequest request) {
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
@@ -129,13 +139,16 @@ public class DocumentService implements IService<Document> {
                         page = documentRepo.findByContentContainsIgnoreCaseAndIdIn(value, documentIds, pageable);
                         break;
                     case "isverifiedall":
-                        page = documentRepo.findByIsVerifiedAllAndIdIn(Boolean.parseBoolean(value), documentIds, pageable);
+                        page = documentRepo.findByIsVerifiedAllAndIdIn(Boolean.parseBoolean(value), documentIds,
+                                pageable);
                         break;
                     case "publicvisibility":
-                        page = documentRepo.findByPublicVisibilityAndIdIn(Boolean.parseBoolean(value), documentIds, pageable);
+                        page = documentRepo.findByPublicVisibilityAndIdIn(Boolean.parseBoolean(value), documentIds,
+                                pageable);
                         break;
                     case "referencedocumentid":
-                        page = documentRepo.findByReferenceDocumentIdAndIdIn(Long.parseLong(value), documentIds, pageable);
+                        page = documentRepo.findByReferenceDocumentIdAndIdIn(Long.parseLong(value), documentIds,
+                                pageable);
                         break;
                     case "version":
                         page = documentRepo.findByVersionAndIdIn(Integer.parseInt(value), documentIds, pageable);
@@ -161,7 +174,8 @@ public class DocumentService implements IService<Document> {
 
                 dto.setAnnotationCount(annotationRepo.countByDocumentId(doc.getId()));
 
-                Optional<UserDocumentPosition> userDocPositions = userDocumentPositionRepo.findByDocumentId(doc.getId());
+                Optional<UserDocumentPosition> userDocPositions = userDocumentPositionRepo
+                        .findByUserIdAndDocumentId(userOpt.get().getId(), doc.getId());
                 if (!userDocPositions.isEmpty()) {
                     User anyUser = userDocPositions.get().getUser();
                     if (anyUser != null) {
@@ -183,7 +197,6 @@ public class DocumentService implements IService<Document> {
         }
     }
 
-
     @Override
     public ResponseEntity<Object> save(Document document, HttpServletRequest request) {
         if (document == null) {
@@ -191,7 +204,7 @@ public class DocumentService implements IService<Document> {
         }
 
         if (Boolean.TRUE.equals(document.getPublicVisibility()) && Boolean.TRUE.equals(document.getPrivate())) {
-            return GlobalResponse.customError("DOC02FV025", "Document cannot be public dan private at the same time",
+            return GlobalResponse.customError("DOC02FV025", "Document cannot be public and private at the same time",
                     request);
         }
 
@@ -207,7 +220,18 @@ public class DocumentService implements IService<Document> {
             }
 
             Long referenceId = document.getReferenceDocumentId();
-            if (referenceId != null) {
+
+            if (referenceId == null) {
+                if (document.getVersion() != 1 || document.getSubversion() != 0) {
+                    return GlobalResponse.customError("DOC02FV032",
+                            "First version must have version=1 and subversion=0", request);
+                }
+            } else {
+                Optional<Document> refDoc = documentRepo.findById(referenceId);
+                if (refDoc.isEmpty()) {
+                    return GlobalResponse.customError("DOC02FV027", "Reference document not found", request);
+                }
+
                 Optional<UserDocumentPosition> userDocOpt = userDocumentPositionRepo
                         .findByUserIdAndDocumentId(userOpt.get().getId(), referenceId);
                 if (userDocOpt.isEmpty() || !"OWNER".equalsIgnoreCase(userDocOpt.get().getPosition())) {
@@ -248,10 +272,8 @@ public class DocumentService implements IService<Document> {
             document.setAnnotable(true);
             document.setId(null);
 
-            // Simpan dulu supaya dapat ID
             Document savedDoc = documentRepo.save(document);
 
-            // Atur referenceDocumentId sesuai root/child rule
             if (referenceId == null) {
                 savedDoc.setReferenceDocumentId(savedDoc.getId());
             } else {
@@ -326,7 +348,6 @@ public class DocumentService implements IService<Document> {
             return GlobalResponse.serverError("DOC02FE031", request);
         }
     }
-
 
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {

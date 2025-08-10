@@ -46,6 +46,7 @@ public class Annotation {
 
     @OneToMany(mappedBy = "annotation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tag> tags;
+
     @Column(name = "CounterRejected", nullable = false)
     private Integer counterRejected = 0;
 
