@@ -27,6 +27,8 @@ public interface ListApplianceDocumentVerifierRepo extends JpaRepository<ListApp
 
     Page<ListApplianceDocumentVerifier> findAllByOwnerDocumentUserId(Long ownerDocumentUserId, Pageable pageable);
 
+    Page<ListApplianceDocumentVerifier> findAllByOwnerDocumentUserIdAndIsAccepted(Long ownerDocumentUserId, Boolean isAccepted, Pageable pageable);
+
     Optional<ListApplianceDocumentVerifier> findByDocumentIdAndUserId(Long documentId, Long userId);
 
 }

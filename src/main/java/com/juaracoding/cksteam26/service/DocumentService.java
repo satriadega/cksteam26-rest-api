@@ -129,7 +129,7 @@ public class DocumentService implements IService<Document> {
             boolean noFilter = (value == null || value.trim().isEmpty());
 
             if (noFilter) {
-                page = documentRepo.findByIdIn(documentIds, pageable);
+                page = documentRepo.findByReferenceDocumentIdIn(documentIds, pageable);
             } else {
                 switch (column.toLowerCase()) {
                     case "title":
@@ -157,7 +157,7 @@ public class DocumentService implements IService<Document> {
                         page = documentRepo.findBySubversionAndIdIn(Integer.parseInt(value), documentIds, pageable);
                         break;
                     default:
-                        page = documentRepo.findByIdIn(documentIds, pageable);
+                        page = documentRepo.findByReferenceDocumentIdIn(documentIds, pageable);
                         break;
                 }
             }
@@ -175,8 +175,8 @@ public class DocumentService implements IService<Document> {
                 dto.setAnnotationCount(annotationRepo.countByDocumentId(doc.getId()));
 
                 Optional<UserDocumentPosition> userDocPositions = userDocumentPositionRepo
-                        .findByUserIdAndDocumentId(userOpt.get().getId(), doc.getId());
-                if (!userDocPositions.isEmpty()) {
+                        .findByDocumentIdAndPosition(doc.getId(), "OWNER");
+                if (userDocPositions.isPresent()) {
                     User anyUser = userDocPositions.get().getUser();
                     if (anyUser != null) {
                         dto.setName(anyUser.getName());

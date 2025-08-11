@@ -1,14 +1,15 @@
 package com.juaracoding.cksteam26.repo;
 
-import com.juaracoding.cksteam26.model.Document;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
+import com.juaracoding.cksteam26.model.Document;
 
 public interface DocumentRepo extends JpaRepository<Document, Long> {
 
@@ -18,8 +19,6 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 left join Annotation a on a.document = d
                 left join Tag t on t.annotation = a
                 left join UserDocumentPosition udp on udp.document = d
-                left join UserOrganization uo on uo.userId = :userId
-                left join UserOrganization ownerOrg on ownerOrg.userId = udp.user.id
                 where (
                     lower(d.title) like lower(concat('%', :keyword, '%'))
                     or lower(a.selectedText) like lower(concat('%', :keyword, '%'))
@@ -29,12 +28,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 and (
                     d.publicVisibility = true
                     or (:userId is not null and udp.user.id = :userId)
-                    or (:userId is not null and uo.organizationId = ownerOrg.organizationId and d.isPrivate != true)
+                    or (
+                        :userId is not null and d.isPrivate = false and
+                        EXISTS (
+                            SELECT 1 FROM UserOrganization uo_user
+                            JOIN UserOrganization uo_owner ON uo_user.organizationId = uo_owner.organizationId
+                            WHERE uo_user.user.id = :userId AND uo_owner.user.id = udp.user.id
+                        )
+                    )
                 )
             """)
     Page<Document> searchDocumentsByKeyword(@Param("keyword") String keyword,
-                                            @Param("userId") Long userId,
-                                            Pageable pageable);
+            @Param("userId") Long userId,
+            Pageable pageable);
 
     @Query("""
                 select d
@@ -86,10 +92,9 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 )
             """)
     List<Document> findRelatedDocumentsById(@Param("referenceDocumentId") Long referenceDocumentId,
-                                            @Param("userId") Long userId);
+            @Param("userId") Long userId);
 
     Page<Document> findByTitleContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
-
 
     Page<Document> findByContentContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
 
@@ -103,5 +108,5 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
 
     Page<Document> findBySubversionAndIdIn(int i, List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByIdIn(List<Long> documentIds, Pageable pageable);
+    Page<Document> findByReferenceDocumentIdIn(List<Long> documentIds, Pageable pageable);
 }

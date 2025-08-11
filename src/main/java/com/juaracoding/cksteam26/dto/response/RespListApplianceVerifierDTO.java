@@ -13,6 +13,7 @@ import java.util.Date;
 public class RespListApplianceVerifierDTO {
 
     private Long documentId;
+    private Long referenceDocumentId; // Added for reference document ID
     private Boolean isAccepted;
     private Date createdAt;
     private String username;
@@ -49,6 +50,14 @@ public class RespListApplianceVerifierDTO {
 
     public void setDocumentId(Long documentId) {
         this.documentId = documentId;
+    }
+
+    public Long getReferenceDocumentId() {
+        return referenceDocumentId;
+    }
+
+    public void setReferenceDocumentId(Long referenceDocumentId) {
+        this.referenceDocumentId = referenceDocumentId;
     }
 
     public Boolean getAccepted() {
