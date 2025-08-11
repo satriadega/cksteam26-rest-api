@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.juaracoding.cksteam26.model.UserOrganization;
@@ -27,4 +30,8 @@ public interface UserOrganizationRepo extends JpaRepository<UserOrganization, Us
     Optional<UserOrganization> findByUserIdAndOrganizationId(Long userId, Long organizationId);
 
     Optional<UserOrganization> findTop1ByOrderByCreatedAtDesc();
+
+    @Modifying
+    @Query("UPDATE UserOrganization uo SET uo.userId = NULL WHERE uo.userId = :userId")
+    void updateUserIdToNullByUserId(@Param("userId") Long userId);
 }

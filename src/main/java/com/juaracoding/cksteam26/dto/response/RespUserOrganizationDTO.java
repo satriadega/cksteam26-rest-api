@@ -1,7 +1,6 @@
 package com.juaracoding.cksteam26.dto.response;
 
 public class RespUserOrganizationDTO {
-    private Long userId;
     private String username;
     private String name;
     private String email;
@@ -30,14 +29,6 @@ public class RespUserOrganizationDTO {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     public Boolean getOrganizationOwner() {

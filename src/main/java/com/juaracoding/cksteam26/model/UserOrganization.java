@@ -1,8 +1,18 @@
 package com.juaracoding.cksteam26.model;
 
-import jakarta.persistence.*;
-
 import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 @Entity
 @Table(name = "UserOrganization")
@@ -13,13 +23,13 @@ public class UserOrganization {
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private final Date createdAt = new Date();
     @Id
-    @Column(name = "UserId", nullable = false)
+    @Column(name = "UserId", nullable = true)
     private Long userId;
     @Id
     @Column(name = "OrganizationId", nullable = false)
     private Long organizationId;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserId", insertable = false, updatable = false,
+    @JoinColumn(name = "UserId", insertable = false, updatable = false, nullable = true,
             foreignKey = @ForeignKey(name = "fk-userorganization-user"))
     private User user;
     @ManyToOne(fetch = FetchType.LAZY)

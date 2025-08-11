@@ -8,19 +8,12 @@ Created on 21/07/25 19.27
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.config.JwtConfig;
-import com.juaracoding.cksteam26.config.OtherConfig;
-import com.juaracoding.cksteam26.dto.validasi.*;
-import com.juaracoding.cksteam26.handler.ResponseHandler;
-import com.juaracoding.cksteam26.model.User;
-import com.juaracoding.cksteam26.repo.UserRepo;
-import com.juaracoding.cksteam26.security.BcryptImpl;
-import com.juaracoding.cksteam26.security.Crypto;
-import com.juaracoding.cksteam26.security.JwtUtility;
-import com.juaracoding.cksteam26.util.LoggingFile;
-import com.juaracoding.cksteam26.util.RequestCapture;
-import com.juaracoding.cksteam26.util.SendMailOTP;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +23,26 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import com.juaracoding.cksteam26.config.JwtConfig;
+import com.juaracoding.cksteam26.config.OtherConfig;
+import com.juaracoding.cksteam26.dto.validasi.ValForgotPasswordDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValForgotPasswordStepThreeDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValForgotPasswordStepTwoDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValLoginDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValRegistrationDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValVerifyRegistrationDTO;
+import com.juaracoding.cksteam26.handler.ResponseHandler;
+import com.juaracoding.cksteam26.model.User;
+import com.juaracoding.cksteam26.repo.UserOrganizationRepo;
+import com.juaracoding.cksteam26.repo.UserRepo;
+import com.juaracoding.cksteam26.security.BcryptImpl;
+import com.juaracoding.cksteam26.security.Crypto;
+import com.juaracoding.cksteam26.security.JwtUtility;
+import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.RequestCapture;
+import com.juaracoding.cksteam26.util.SendMailOTP;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
@@ -48,6 +56,9 @@ public class AuthService implements UserDetailsService {
     @Autowired
     private JwtUtility jwtUtility;
 
+    @Autowired
+    private UserOrganizationRepo userOrganizationRepo;
+
     /**
      * 001-010
      */
@@ -58,8 +69,7 @@ public class AuthService implements UserDetailsService {
                     HttpStatus.BAD_REQUEST,
                     null,
                     "DOC00FV001",
-                    request
-            );
+                    request);
         }
 
         Map<String, Object> mapResponse = new HashMap<>();
@@ -79,8 +89,7 @@ public class AuthService implements UserDetailsService {
                             HttpStatus.CONFLICT,
                             null,
                             "DOC00FV002",
-                            request
-                    );
+                            request);
                 }
 
                 existingUser.setUsername(user.getUsername());
@@ -111,36 +120,32 @@ public class AuthService implements UserDetailsService {
                         user.getName(),
                         user.getEmail(),
                         String.valueOf(otp),
-                        "ver_regis.html"
-                );
+                        "ver_regis.html");
             }
 
             mapResponse.put("email", user.getEmail());
 
             return new ResponseHandler().handleResponse(
-                    isAutomation ? "Automation Testing: OTP successfully generated!" : "OTP sent, please check your email!",
+                    isAutomation ? "Automation Testing: OTP successfully generated!"
+                            : "OTP sent, please check your email!",
                     HttpStatus.OK,
                     mapResponse,
                     null,
-                    request
-            );
+                    request);
 
         } catch (Exception e) {
             LoggingFile.logException(
                     "AuthService",
                     "registration(User, HttpServletRequest) " + RequestCapture.allRequest(request),
-                    e
-            );
+                    e);
             return new ResponseHandler().handleResponse(
                     "Server error occurred!",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     null,
                     "DOC00FE001",
-                    request
-            );
+                    request);
         }
     }
-
 
     public User mapToUser(ValRegistrationDTO registrationDTO) {
         User user = new User();
@@ -150,7 +155,6 @@ public class AuthService implements UserDetailsService {
         user.setPassword(registrationDTO.getPassword());
         return user;
     }
-
 
     public User mapToUser(ValVerifyRegistrationDTO verifyRegistrationDTO) {
         User user = new User();
@@ -175,9 +179,10 @@ public class AuthService implements UserDetailsService {
             throw new UsernameNotFoundException("Invalid username or password!");
         }
         User user = opUser.get();
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), user.getAuthorities());
+        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
+                user.getAuthorities());
     }
-    
+
     /**
      * 011-020
      */
@@ -186,7 +191,8 @@ public class AuthService implements UserDetailsService {
             int otp = random.nextInt(100000, 999999);
             Optional<User> opUser = userRepo.findByEmail(user.getEmail());
             if (opUser.isEmpty()) {
-                return new ResponseHandler().handleResponse("Email not found!", HttpStatus.BAD_REQUEST, null, "DOC00FV011", request);
+                return new ResponseHandler().handleResponse("Email not found!", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV011", request);
             }
 
             User userNext = opUser.get();
@@ -194,7 +200,8 @@ public class AuthService implements UserDetailsService {
             String savedToken = userNext.getToken();
 
             if (incomingToken == null || savedToken == null || !BcryptImpl.verifyHash(incomingToken, savedToken)) {
-                return new ResponseHandler().handleResponse("Invalid OTP!", HttpStatus.BAD_REQUEST, null, "DOC00FV012", request);
+                return new ResponseHandler().handleResponse("Invalid OTP!", HttpStatus.BAD_REQUEST, null, "DOC00FV012",
+                        request);
             }
 
             userNext.setVerified(true);
@@ -204,8 +211,11 @@ public class AuthService implements UserDetailsService {
             return new ResponseHandler().handleResponse("Registration successful!", HttpStatus.OK, null, null, request);
 
         } catch (Exception e) {
-            LoggingFile.logException("AuthService", "verifyRegistration(User user, HttpServletRequest request)" + RequestCapture.allRequest(request), e);
-            return new ResponseHandler().handleResponse("Server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR, null, "DOC00FE011", request);
+            LoggingFile.logException("AuthService",
+                    "verifyRegistration(User user, HttpServletRequest request)" + RequestCapture.allRequest(request),
+                    e);
+            return new ResponseHandler().handleResponse("Server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR,
+                    null, "DOC00FE011", request);
         }
     }
 
@@ -220,18 +230,22 @@ public class AuthService implements UserDetailsService {
             String username = dto.getUsername();
             Optional<User> opUser = userRepo.findByUsernameAndIsVerified(username, true);
             if (opUser.isEmpty()) {
-                return new ResponseHandler().handleResponse("User not found", HttpStatus.BAD_REQUEST, null, "DOC00FV021", request);
+                return new ResponseHandler().handleResponse("User not found", HttpStatus.BAD_REQUEST, null,
+                        "DOC00FV021", request);
             }
 
             userFromDb = opUser.get();
 
             String combined = userFromDb.getUsername() + dto.getPassword();
             if (!BcryptImpl.verifyHash(combined, userFromDb.getPassword())) {
-                return new ResponseHandler().handleResponse("Invalid username or password", HttpStatus.BAD_REQUEST, null, "DOC00FV022", request);
+                return new ResponseHandler().handleResponse("Invalid username or password", HttpStatus.BAD_REQUEST,
+                        null, "DOC00FV022", request);
             }
         } catch (Exception e) {
-            LoggingFile.logException("AuthService", "login(ValLoginDTO dto, HttpServletRequest request) " + RequestCapture.allRequest(request), e);
-            return new ResponseHandler().handleResponse("Server error", HttpStatus.INTERNAL_SERVER_ERROR, null, "DOC00FE021", request);
+            LoggingFile.logException("AuthService",
+                    "login(ValLoginDTO dto, HttpServletRequest request) " + RequestCapture.allRequest(request), e);
+            return new ResponseHandler().handleResponse("Server error", HttpStatus.INTERNAL_SERVER_ERROR, null,
+                    "DOC00FE021", request);
         }
 
         Map<String, Object> mapData = new HashMap<>();
@@ -265,8 +279,7 @@ public class AuthService implements UserDetailsService {
                         HttpStatus.BAD_REQUEST,
                         null,
                         "DOC00FV031",
-                        request
-                );
+                        request);
             }
 
             userFromDb = opUser.get();
@@ -278,19 +291,18 @@ public class AuthService implements UserDetailsService {
                         HttpStatus.BAD_REQUEST,
                         null,
                         "DOC00FV032",
-                        request
-                );
+                        request);
             }
 
         } catch (Exception e) {
-            LoggingFile.logException("AuthService", "refreshToken(User, HttpServletRequest)" + RequestCapture.allRequest(request), e);
+            LoggingFile.logException("AuthService",
+                    "refreshToken(User, HttpServletRequest)" + RequestCapture.allRequest(request), e);
             return new ResponseHandler().handleResponse(
                     "Server encountered an error",
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     null,
                     "DOC00FE031",
-                    request
-            );
+                    request);
         }
 
         Map<String, Object> jwtPayload = new HashMap<>();
@@ -308,8 +320,7 @@ public class AuthService implements UserDetailsService {
                 HttpStatus.OK,
                 responseMap,
                 null,
-                request
-        );
+                request);
     }
 
     /**
@@ -341,7 +352,8 @@ public class AuthService implements UserDetailsService {
                     "DOC00FE041", request);
         }
 
-        return new ResponseHandler().handleResponse("OTP has been sent to email", HttpStatus.OK, mapResponse, null, request);
+        return new ResponseHandler().handleResponse("OTP has been sent to email", HttpStatus.OK, mapResponse, null,
+                request);
     }
 
     public User mapToUser(ValForgotPasswordDTO dto) {
@@ -390,7 +402,8 @@ public class AuthService implements UserDetailsService {
                     "DOC00FE051", request);
         }
 
-        return new ResponseHandler().handleResponse("Verification successful", HttpStatus.OK, mapResponse, null, request);
+        return new ResponseHandler().handleResponse("Verification successful", HttpStatus.OK, mapResponse, null,
+                request);
     }
 
     public User mapToUser(ValForgotPasswordStepTwoDTO dto) {
@@ -434,7 +447,38 @@ public class AuthService implements UserDetailsService {
                     "DOC00FE061", request);
         }
 
-        return new ResponseHandler().handleResponse("Password successfully changed", HttpStatus.OK, null, null, request);
+        return new ResponseHandler().handleResponse("Password successfully changed", HttpStatus.OK, null, null,
+                request);
     }
 
+    /**
+     * 071-080
+     */
+    public ResponseEntity<Object> deleteUser(User user, HttpServletRequest request) {
+        try {
+            Optional<User> opUser = userRepo.findByUsernameAndIsVerified(user.getUsername(), true);
+            if (opUser.isEmpty()) {
+                return new ResponseHandler().handleResponse("User not found or not verified!", HttpStatus.BAD_REQUEST,
+                        null, "DOC00FV071", request);
+            }
+
+            User userToDelete = opUser.get();
+
+            // Set userId to null in UserOrganization table for all entries associated with
+            // this user
+            userOrganizationRepo.updateUserIdToNullByUserId(userToDelete.getId());
+
+            // Based on user feedback, performing a hard delete of the user record.
+            userRepo.delete(userToDelete);
+
+            return new ResponseHandler().handleResponse("User account successfully deleted!", HttpStatus.OK, null, null,
+                    request);
+
+        } catch (Exception e) {
+            LoggingFile.logException("AuthService",
+                    "deleteUser(User user, HttpServletRequest request)" + RequestCapture.allRequest(request), e);
+            return new ResponseHandler().handleResponse("Server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR,
+                    null, "DOC00FE071", request);
+        }
+    }
 }

@@ -13,7 +13,7 @@ public class RespOrganizationDTO {
     private Long id;
 
     private String organizationName;
-    private Boolean publicVisibility; //may be disabled
+    private Boolean publicVisibility; // may be disabled
 
     public Long getId() {
         return id;

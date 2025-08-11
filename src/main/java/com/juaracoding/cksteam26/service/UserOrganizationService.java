@@ -169,6 +169,54 @@ public class UserOrganizationService implements IService<Organization> {
     }
 
 
+    public ResponseEntity<Object> deleteOrganization(Long organizationId, HttpServletRequest request) {
+        try {
+            String bearerToken = request.getHeader("Authorization");
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return GlobalResponse.dataIsNotFound("DOC02FV031", request);
+            }
+
+            String token = bearerToken.substring(7);
+            if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
+                token = Crypto.performDecrypt(token);
+            }
+
+            Map<String, Object> claims = jwtUtility.mappingBodyToken(token);
+            String username = String.valueOf(claims.get("username"));
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV032", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV033", request);
+            }
+            User currentUser = userOpt.get();
+
+            Optional<UserOrganization> userOrgOpt = userOrganizationRepo.findByUserIdAndOrganizationId(currentUser.getId(), organizationId);
+            if (userOrgOpt.isEmpty() || !userOrgOpt.get().getOrganizationOwner()) {
+                return GlobalResponse.forbidden("DOC02FV034", request);
+            }
+
+            Optional<Organization> orgOpt = organizationRepo.findById(organizationId);
+            if (orgOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV035", request);
+            }
+            Organization organizationToDelete = orgOpt.get();
+
+            List<UserOrganization> userOrganizations = userOrganizationRepo.findByOrganizationId(organizationId);
+            userOrganizationRepo.deleteAll(userOrganizations);
+
+            organizationRepo.delete(organizationToDelete);
+
+            return GlobalResponse.dataIsDeleted(request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(getClass().getSimpleName(), "deleteOrganization", e);
+            return GlobalResponse.serverError("DOC02FE031", request);
+        }
+    }
+
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
         return null;
@@ -312,12 +360,9 @@ public class UserOrganizationService implements IService<Organization> {
         return list.stream().map(uo -> {
             RespUserOrganizationDTO dto = new RespUserOrganizationDTO();
             if (uo.getUser() != null) {
-                dto.setUserId(uo.getUser().getId());
                 dto.setUsername(uo.getUser().getUsername());
                 dto.setName(uo.getUser().getName());
                 dto.setEmail(uo.getUser().getEmail());
-            } else {
-                dto.setUserId(uo.getUserId());
             }
             dto.setOrganizationOwner(uo.getOrganizationOwner());
 
