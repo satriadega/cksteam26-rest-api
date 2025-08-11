@@ -1,5 +1,17 @@
 package com.juaracoding.cksteam26.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.juaracoding.cksteam26.config.JwtConfig;
 import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespOrganizationDTO;
@@ -15,18 +27,8 @@ import com.juaracoding.cksteam26.security.Crypto;
 import com.juaracoding.cksteam26.security.JwtUtility;
 import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
-import jakarta.servlet.http.HttpServletRequest;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
@@ -124,7 +126,7 @@ public class UserOrganizationService implements IService<Organization> {
 
             Organization org = new Organization();
             org.setOrganizationName(valCreateOrganizationDTO.getOrganizationName());
-            org.setPublicVisibility(valCreateOrganizationDTO.getPublicVisibility());
+            org.setPublicVisibility(false);
 
             Organization savedOrg = saveOrganization(org);
 
