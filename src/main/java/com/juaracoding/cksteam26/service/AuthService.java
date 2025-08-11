@@ -345,9 +345,20 @@ public class AuthService implements UserDetailsService {
 
             if ("y".equalsIgnoreCase(OtherConfig.getEnableAutomationTesting())) {
                 mapResponse.put("otp", intOtp);
+            } else if ("y".equalsIgnoreCase(OtherConfig.getSmtpEnable())) {
+                SendMailOTP.sendMail(
+                        "FORGOT PASSWORD OTP",
+                        userNext.getName(),
+                        userNext.getEmail(),
+                        String.valueOf(intOtp),
+                        "forgot_password.html");
             }
             mapResponse.put("estafet", strTokenEstafet);
         } catch (Exception e) {
+            LoggingFile.logException(
+                    "AuthService",
+                    "lupaPasswordStepOne(User, HttpServletRequest) " + RequestCapture.allRequest(request),
+                    e);
             return new ResponseHandler().handleResponse("Server error occurred", HttpStatus.INTERNAL_SERVER_ERROR, null,
                     "DOC00FE041", request);
         }
