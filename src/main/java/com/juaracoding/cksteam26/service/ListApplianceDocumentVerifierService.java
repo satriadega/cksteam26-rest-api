@@ -268,6 +268,7 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             if (userOpt.isEmpty()) {
                 return GlobalResponse.customError("DOC05FV053", "Unauthorized", request);
             }
+            Long userId = userOpt.get().getId();
 
             Optional<Document> documentOpt = documentRepo.findById(documentId);
             if (documentOpt.isEmpty()) {
@@ -277,7 +278,7 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
             Long referenceDocumentId = document.getReferenceDocumentId();
 
             Optional<ListApplianceDocumentVerifier> verifierOpt = listApplianceDocumentVerifierRepo
-                    .findFirstByDocumentId(referenceDocumentId);
+                    .findByDocumentIdAndUserId(referenceDocumentId, userId);
             if (verifierOpt.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC05FV055", request);
             }

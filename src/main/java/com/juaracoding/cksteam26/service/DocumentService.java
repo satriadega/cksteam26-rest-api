@@ -114,11 +114,7 @@ public class DocumentService implements IService<Document> {
 
             Long userId = userOpt.get().getId();
 
-            List<Long> documentIds = userDocumentPositionRepo.findDocumentIdsByUserId(userId)
-                    .stream()
-                    .distinct()
-                    .sorted()
-                    .collect(Collectors.toList());
+            List<Long> documentIds = documentRepo.findVisibleDocumentIds(userId);
 
             if (documentIds.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC02FV013", request);
@@ -129,7 +125,7 @@ public class DocumentService implements IService<Document> {
             boolean noFilter = (value == null || value.trim().isEmpty());
 
             if (noFilter) {
-                page = documentRepo.findByReferenceDocumentIdIn(documentIds, pageable);
+                page = documentRepo.findByIdIn(documentIds, pageable);
             } else {
                 switch (column.toLowerCase()) {
                     case "title":
@@ -156,8 +152,16 @@ public class DocumentService implements IService<Document> {
                     case "subversion":
                         page = documentRepo.findBySubversionAndIdIn(Integer.parseInt(value), documentIds, pageable);
                         break;
+                    case "isannotable":
+                        page = documentRepo.findByIsAnnotableAndIdIn(Boolean.parseBoolean(value), documentIds,
+                                pageable);
+                        break;
+                    case "isprivate":
+                        page = documentRepo.findByIsPrivateAndIdIn(Boolean.parseBoolean(value), documentIds,
+                                pageable);
+                        break;
                     default:
-                        page = documentRepo.findByReferenceDocumentIdIn(documentIds, pageable);
+                        page = documentRepo.findByIdIn(documentIds, pageable);
                         break;
                 }
             }
@@ -402,10 +406,13 @@ public class DocumentService implements IService<Document> {
             }
 
             Page<Document> page;
-            if (keyword == null || keyword.trim().isEmpty()) {
+            String effectiveKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+
+            if (effectiveKeyword == null) {
+                System.out.println("gerak jalan");
                 page = documentRepo.findAllVisibleDocuments(userId, pageable);
             } else {
-                page = documentRepo.searchDocumentsByKeyword(keyword.trim(), userId, pageable);
+                page = documentRepo.searchDocumentsByKeyword(effectiveKeyword, userId, pageable);
             }
 
             if (page.isEmpty()) {
@@ -434,7 +441,7 @@ public class DocumentService implements IService<Document> {
                     })
                     .collect(Collectors.toList());
 
-            Map<String, Object> mapResponse = transformPagination.transform(dtoList, page, "title", keyword);
+            Map<String, Object> mapResponse = transformPagination.transform(dtoList, page, "title", effectiveKeyword);
 
             return GlobalResponse.dataIsFound(mapResponse, request);
         } catch (Exception e) {

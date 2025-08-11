@@ -52,7 +52,6 @@ public class UserOrganizationService implements IService<Organization> {
     @Autowired
     private ModelMapper modelMapper;
 
-
     public ResponseEntity<Object> findAllWithoutPagination(HttpServletRequest request) {
         try {
             String bearerToken = request.getHeader("Authorization");
@@ -87,8 +86,8 @@ public class UserOrganizationService implements IService<Organization> {
         }
     }
 
-
-    public ResponseEntity<Object> saveOrganizationWithMembers(ValCreateOrganizationDTO valCreateOrganizationDTO, HttpServletRequest request) {
+    public ResponseEntity<Object> saveOrganizationWithMembers(ValCreateOrganizationDTO valCreateOrganizationDTO,
+            HttpServletRequest request) {
         try {
             String bearerToken = request.getHeader("Authorization");
             if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
@@ -153,7 +152,6 @@ public class UserOrganizationService implements IService<Organization> {
         }
     }
 
-
     public Organization saveOrganization(Organization organization) {
         return organizationRepo.save(organization);
     }
@@ -167,7 +165,6 @@ public class UserOrganizationService implements IService<Organization> {
     public ResponseEntity<Object> update(Long id, Organization organization, HttpServletRequest request) {
         return null;
     }
-
 
     public ResponseEntity<Object> deleteOrganization(Long organizationId, HttpServletRequest request) {
         try {
@@ -193,7 +190,8 @@ public class UserOrganizationService implements IService<Organization> {
             }
             User currentUser = userOpt.get();
 
-            Optional<UserOrganization> userOrgOpt = userOrganizationRepo.findByUserIdAndOrganizationId(currentUser.getId(), organizationId);
+            Optional<UserOrganization> userOrgOpt = userOrganizationRepo
+                    .findByUserIdAndOrganizationId(currentUser.getId(), organizationId);
             if (userOrgOpt.isEmpty() || !userOrgOpt.get().getOrganizationOwner()) {
                 return GlobalResponse.forbidden("DOC02FV034", request);
             }
@@ -250,7 +248,8 @@ public class UserOrganizationService implements IService<Organization> {
             }
             Long userId = userOpt.get().getId();
 
-            Optional<UserOrganization> userOrganizationOpt = userOrganizationRepo.findByUserIdAndOrganizationId(userId, id);
+            Optional<UserOrganization> userOrganizationOpt = userOrganizationRepo.findByUserIdAndOrganizationId(userId,
+                    id);
             if (userOrganizationOpt.isEmpty()) {
                 return GlobalResponse.forbidden("DOC02FV005", request);
             }
@@ -268,11 +267,13 @@ public class UserOrganizationService implements IService<Organization> {
     }
 
     @Override
-    public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value, HttpServletRequest request) {
+    public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value,
+            HttpServletRequest request) {
         return null;
     }
 
-    public ResponseEntity<Object> updateOrganization(Long organizationId, ValUserOrganizationDTO valUserOrganizationDTO, HttpServletRequest request) {
+    public ResponseEntity<Object> updateOrganization(Long organizationId, ValUserOrganizationDTO valUserOrganizationDTO,
+            HttpServletRequest request) {
         try {
             String bearerToken = request.getHeader("Authorization");
             if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
@@ -296,7 +297,8 @@ public class UserOrganizationService implements IService<Organization> {
             }
             User currentUser = userOpt.get();
 
-            Optional<UserOrganization> userOrgOpt = userOrganizationRepo.findByUserIdAndOrganizationId(currentUser.getId(), organizationId);
+            Optional<UserOrganization> userOrgOpt = userOrganizationRepo
+                    .findByUserIdAndOrganizationId(currentUser.getId(), organizationId);
             if (userOrgOpt.isEmpty() || !userOrgOpt.get().getOrganizationOwner()) {
                 return GlobalResponse.forbidden("DOC02FV024", request);
             }
@@ -307,8 +309,10 @@ public class UserOrganizationService implements IService<Organization> {
             }
             Organization organization = orgOpt.get();
 
-            if (valUserOrganizationDTO.getOrganizationName() != null && !valUserOrganizationDTO.getOrganizationName().isEmpty()) {
-                Optional<Organization> existingOrg = organizationRepo.findFirstByOrganizationName(valUserOrganizationDTO.getOrganizationName());
+            if (valUserOrganizationDTO.getOrganizationName() != null
+                    && !valUserOrganizationDTO.getOrganizationName().isEmpty()) {
+                Optional<Organization> existingOrg = organizationRepo
+                        .findFirstByOrganizationName(valUserOrganizationDTO.getOrganizationName());
                 if (existingOrg.isPresent() && !existingOrg.get().getId().equals(organizationId)) {
                     return GlobalResponse.customError("DOC02FV027", "Organization name already exists", request);
                 }
@@ -320,7 +324,8 @@ public class UserOrganizationService implements IService<Organization> {
                     Optional<User> memberOpt = userRepo.findByEmailAndIsVerified(memberEmail, true);
                     if (memberOpt.isPresent()) {
                         User member = memberOpt.get();
-                        if (userOrganizationRepo.findByUserIdAndOrganizationId(member.getId(), organizationId).isEmpty()) {
+                        if (userOrganizationRepo.findByUserIdAndOrganizationId(member.getId(), organizationId)
+                                .isEmpty()) {
                             UserOrganization newUserOrg = new UserOrganization();
                             newUserOrg.setOrganization(organization);
                             newUserOrg.setUser(member);
@@ -336,7 +341,8 @@ public class UserOrganizationService implements IService<Organization> {
                     Optional<User> memberOpt = userRepo.findByEmailAndIsVerified(memberEmail, true);
                     if (memberOpt.isPresent()) {
                         User member = memberOpt.get();
-                        Optional<UserOrganization> memberOrgOpt = userOrganizationRepo.findByUserIdAndOrganizationId(member.getId(), organizationId);
+                        Optional<UserOrganization> memberOrgOpt = userOrganizationRepo
+                                .findByUserIdAndOrganizationId(member.getId(), organizationId);
                         if (memberOrgOpt.isPresent()) {
                             if (memberOrgOpt.get().getOrganizationOwner()) {
                                 return GlobalResponse.forbidden("DOC02FV026", request);
