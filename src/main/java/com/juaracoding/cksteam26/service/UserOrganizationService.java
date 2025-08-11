@@ -17,6 +17,7 @@ import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespOrganizationDTO;
 import com.juaracoding.cksteam26.dto.response.RespUserOrganizationDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValCreateOrganizationDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValUserOrganizationDTO;
 import com.juaracoding.cksteam26.model.Organization;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.model.UserOrganization;
@@ -180,7 +181,42 @@ public class UserOrganizationService implements IService<Organization> {
 
     @Override
     public ResponseEntity<Object> findById(Long id, HttpServletRequest request) {
-        return null;
+        try {
+            String bearerToken = request.getHeader("Authorization");
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return GlobalResponse.dataIsNotFound("DOC02FV001", request);
+            }
+            String token = bearerToken.substring(7);
+            if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
+                token = Crypto.performDecrypt(token);
+            }
+            Map<String, Object> claims = jwtUtility.mappingBodyToken(token);
+            String username = String.valueOf(claims.get("username"));
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV002", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV003", request);
+            }
+            Long userId = userOpt.get().getId();
+
+            Optional<UserOrganization> userOrganizationOpt = userOrganizationRepo.findByUserIdAndOrganizationId(userId, id);
+            if (userOrganizationOpt.isEmpty()) {
+                return GlobalResponse.forbidden("DOC02FV005", request);
+            }
+
+            List<UserOrganization> userOrganizationList = userOrganizationRepo.findByOrganizationId(id);
+            if (userOrganizationList == null || userOrganizationList.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV004", request);
+            }
+            List<RespUserOrganizationDTO> dtoList = mapToModelMapper(userOrganizationList);
+            return GlobalResponse.dataIsFound(dtoList, request);
+        } catch (Exception e) {
+            LoggingFile.logException(getClass().getSimpleName(), "findById", e);
+            return GlobalResponse.serverError("DOC02FE001", request);
+        }
     }
 
     @Override
@@ -188,10 +224,101 @@ public class UserOrganizationService implements IService<Organization> {
         return null;
     }
 
+    public ResponseEntity<Object> updateOrganization(Long organizationId, ValUserOrganizationDTO valUserOrganizationDTO, HttpServletRequest request) {
+        try {
+            String bearerToken = request.getHeader("Authorization");
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return GlobalResponse.dataIsNotFound("DOC02FV021", request);
+            }
+
+            String token = bearerToken.substring(7);
+            if ("y".equalsIgnoreCase(JwtConfig.getTokenEncryptEnable())) {
+                token = Crypto.performDecrypt(token);
+            }
+
+            Map<String, Object> claims = jwtUtility.mappingBodyToken(token);
+            String username = String.valueOf(claims.get("username"));
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV022", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV023", request);
+            }
+            User currentUser = userOpt.get();
+
+            Optional<UserOrganization> userOrgOpt = userOrganizationRepo.findByUserIdAndOrganizationId(currentUser.getId(), organizationId);
+            if (userOrgOpt.isEmpty() || !userOrgOpt.get().getOrganizationOwner()) {
+                return GlobalResponse.forbidden("DOC02FV024", request);
+            }
+
+            Optional<Organization> orgOpt = organizationRepo.findById(organizationId);
+            if (orgOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC02FV025", request);
+            }
+            Organization organization = orgOpt.get();
+
+            if (valUserOrganizationDTO.getOrganizationName() != null && !valUserOrganizationDTO.getOrganizationName().isEmpty()) {
+                Optional<Organization> existingOrg = organizationRepo.findFirstByOrganizationName(valUserOrganizationDTO.getOrganizationName());
+                if (existingOrg.isPresent() && !existingOrg.get().getId().equals(organizationId)) {
+                    return GlobalResponse.customError("DOC02FV027", "Organization name already exists", request);
+                }
+                organization.setOrganizationName(valUserOrganizationDTO.getOrganizationName());
+            }
+
+            if (valUserOrganizationDTO.getAddMember() != null) {
+                for (String memberEmail : valUserOrganizationDTO.getAddMember()) {
+                    Optional<User> memberOpt = userRepo.findByEmailAndIsVerified(memberEmail, true);
+                    if (memberOpt.isPresent()) {
+                        User member = memberOpt.get();
+                        if (userOrganizationRepo.findByUserIdAndOrganizationId(member.getId(), organizationId).isEmpty()) {
+                            UserOrganization newUserOrg = new UserOrganization();
+                            newUserOrg.setOrganization(organization);
+                            newUserOrg.setUser(member);
+                            newUserOrg.setOrganizationOwner(false);
+                            userOrganizationRepo.save(newUserOrg);
+                        }
+                    }
+                }
+            }
+
+            if (valUserOrganizationDTO.getRemoveMember() != null) {
+                for (String memberEmail : valUserOrganizationDTO.getRemoveMember()) {
+                    Optional<User> memberOpt = userRepo.findByEmailAndIsVerified(memberEmail, true);
+                    if (memberOpt.isPresent()) {
+                        User member = memberOpt.get();
+                        Optional<UserOrganization> memberOrgOpt = userOrganizationRepo.findByUserIdAndOrganizationId(member.getId(), organizationId);
+                        if (memberOrgOpt.isPresent()) {
+                            if (memberOrgOpt.get().getOrganizationOwner()) {
+                                return GlobalResponse.forbidden("DOC02FV026", request);
+                            }
+                            userOrganizationRepo.delete(memberOrgOpt.get());
+                        }
+                    }
+                }
+            }
+
+            organizationRepo.save(organization);
+            return GlobalResponse.dataUpdatedSuccessfully(request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(getClass().getSimpleName(), "updateOrganization", e);
+            return GlobalResponse.serverError("DOC02FE021", request);
+        }
+    }
+
     private List<RespUserOrganizationDTO> mapToModelMapper(List<UserOrganization> list) {
         return list.stream().map(uo -> {
             RespUserOrganizationDTO dto = new RespUserOrganizationDTO();
-            dto.setUserId(uo.getUser() != null ? uo.getUser().getId() : uo.getUserId());
+            if (uo.getUser() != null) {
+                dto.setUserId(uo.getUser().getId());
+                dto.setUsername(uo.getUser().getUsername());
+                dto.setName(uo.getUser().getName());
+                dto.setEmail(uo.getUser().getEmail());
+            } else {
+                dto.setUserId(uo.getUserId());
+            }
             dto.setOrganizationOwner(uo.getOrganizationOwner());
 
             if (uo.getOrganization() != null) {

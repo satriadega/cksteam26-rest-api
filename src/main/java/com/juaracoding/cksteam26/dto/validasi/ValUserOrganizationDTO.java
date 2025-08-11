@@ -1,51 +1,33 @@
 package com.juaracoding.cksteam26.dto.validasi;
 
-import java.util.Date;
-
-import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 public class ValUserOrganizationDTO {
+    private String organizationName;
+    private List<String> addMember;
+    private List<String> removeMember;
 
-    @NotNull(message = "UserId cannot be null")
-    private Long userId;
-
-    @NotNull(message = "OrganizationId cannot be null")
-    private Long organizationId;
-
-    @NotNull(message = "OrganizationOwner cannot be null")
-    private Boolean organizationOwner;
-
-    private Date createdAt;
-
-    public Long getUserId() {
-        return userId;
+    public String getOrganizationName() {
+        return organizationName;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setOrganizationName(String organizationName) {
+        this.organizationName = organizationName;
     }
 
-    public Long getOrganizationId() {
-        return organizationId;
+    public List<String> getAddMember() {
+        return addMember;
     }
 
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
+    public void setAddMember(List<String> addMember) {
+        this.addMember = addMember;
     }
 
-    public Boolean getOrganizationOwner() {
-        return organizationOwner;
+    public List<String> getRemoveMember() {
+        return removeMember;
     }
 
-    public void setOrganizationOwner(Boolean organizationOwner) {
-        this.organizationOwner = organizationOwner;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setRemoveMember(List<String> removeMember) {
+        this.removeMember = removeMember;
     }
 }

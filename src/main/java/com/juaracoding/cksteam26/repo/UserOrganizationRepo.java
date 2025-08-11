@@ -8,13 +8,14 @@ Created on 02/08/25 06.44
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.model.UserOrganization;
-import com.juaracoding.cksteam26.model.UserOrganizationId;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.juaracoding.cksteam26.model.UserOrganization;
+import com.juaracoding.cksteam26.model.UserOrganizationId;
 
 @Repository
 public interface UserOrganizationRepo extends JpaRepository<UserOrganization, UserOrganizationId> {
@@ -22,6 +23,8 @@ public interface UserOrganizationRepo extends JpaRepository<UserOrganization, Us
     List<UserOrganization> findByUserId(Long userId);
 
     List<UserOrganization> findByOrganizationId(Long organizationId);
+
+    Optional<UserOrganization> findByUserIdAndOrganizationId(Long userId, Long organizationId);
 
     Optional<UserOrganization> findTop1ByOrderByCreatedAtDesc();
 }
