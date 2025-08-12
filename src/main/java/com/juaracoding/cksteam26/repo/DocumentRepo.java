@@ -27,18 +27,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             )
             and
             (
+                d.publicVisibility = true
+                OR
                 (:userId IS NOT NULL AND udp.user.id = :userId)
                 OR
-                (d.isPrivate = false AND (
-                    :userId IS NULL
-                    OR
-                    (:userId IS NOT NULL AND EXISTS (
+                (
+                    d.isPrivate = false AND d.publicVisibility = false AND :userId IS NOT NULL
+                    AND EXISTS (
                        SELECT 1
                        FROM UserOrganization uo_viewer
                        JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
                        WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-                    ))
-                ))
+                    )
+                )
             )
             """)
     Page<Document> searchDocumentsByKeyword(@Param("keyword") String keyword,
@@ -51,18 +52,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             left join UserDocumentPosition udp on udp.document = d
             where
             (
+                d.publicVisibility = true
+                OR
                 (:userId IS NOT NULL AND udp.user.id = :userId)
                 OR
-                (d.isPrivate = false AND (
-                    :userId IS NULL
-                    OR
-                    (:userId IS NOT NULL AND EXISTS (
+                (
+                    d.isPrivate = false AND d.publicVisibility = false AND :userId IS NOT NULL
+                    AND EXISTS (
                        SELECT 1
                        FROM UserOrganization uo_viewer
                        JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
                        WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-                    ))
-                ))
+                    )
+                )
             )
             """)
     Page<Document> findAllVisibleDocuments(@Param("userId") Long userId, Pageable pageable);
@@ -72,18 +74,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
              LEFT JOIN UserDocumentPosition udp ON udp.document.id = d.id
              WHERE d.id = :documentId
              AND (
+                d.publicVisibility = true
+                OR
                 (:userId IS NOT NULL AND udp.user.id = :userId)
                 OR
-                (d.isPrivate = false AND (
-                    :userId IS NULL
-                    OR
-                    (:userId IS NOT NULL AND EXISTS (
+                (
+                    d.isPrivate = false AND d.publicVisibility = false AND :userId IS NOT NULL
+                    AND EXISTS (
                        SELECT 1
                        FROM UserOrganization uo_viewer
                        JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
                        WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-                    ))
-                ))
+                    )
+                )
              )
             """)
     Optional<Document> findAccessibleDocumentById(@Param("documentId") Long documentId, @Param("userId") Long userId);
@@ -101,18 +104,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
              LEFT JOIN UserDocumentPosition udp ON udp.document.id = d.id
              WHERE d.referenceDocumentId = :referenceDocumentId
              AND (
+                d.publicVisibility = true
+                OR
                 (:userId IS NOT NULL AND udp.user.id = :userId)
                 OR
-                (d.isPrivate = false AND (
-                    :userId IS NULL
-                    OR
-                    (:userId IS NOT NULL AND EXISTS (
+                (
+                    d.isPrivate = false AND d.publicVisibility = false AND :userId IS NOT NULL
+                    AND EXISTS (
                        SELECT 1
                        FROM UserOrganization uo_viewer
                        JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
                        WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-                    ))
-                ))
+                    )
+                )
              )
             """)
     List<Document> findRelatedDocumentsByReferenceId(@Param("referenceDocumentId") Long referenceDocumentId,
@@ -144,18 +148,19 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             left join UserDocumentPosition udp on udp.document = d
             where
             (
+                d.publicVisibility = true
+                OR
                 (:userId IS NOT NULL AND udp.user.id = :userId)
                 OR
-                (d.isPrivate = false AND (
-                    :userId IS NULL
-                    OR
-                    (:userId IS NOT NULL AND EXISTS (
+                (
+                    d.isPrivate = false AND d.publicVisibility = false AND :userId IS NOT NULL
+                    AND EXISTS (
                        SELECT 1
                        FROM UserOrganization uo_viewer
                        JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
                        WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-                    ))
-                ))
+                    )
+                )
             )
             """)
     List<Long> findVisibleDocumentIds(@Param("userId") Long userId);
