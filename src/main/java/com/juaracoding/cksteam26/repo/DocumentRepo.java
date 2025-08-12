@@ -122,25 +122,25 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
     List<Document> findRelatedDocumentsByReferenceId(@Param("referenceDocumentId") Long referenceDocumentId,
             @Param("userId") Long userId);
 
-    Page<Document> findByTitleContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByTitleContainsIgnoreCaseAndReferenceDocumentIdIn(String value, List<Long> documentIds,
+            Pageable pageable);
 
-    Page<Document> findByContentContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByContentContainsIgnoreCaseAndReferenceDocumentIdIn(String value, List<Long> documentIds,
+            Pageable pageable);
 
-    Page<Document> findByIsVerifiedAllAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByIsVerifiedAllAndReferenceDocumentIdIn(boolean b, List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByPublicVisibilityAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByPublicVisibilityAndReferenceDocumentIdIn(boolean b, List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByReferenceDocumentIdAndIdIn(long l, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByVersionAndReferenceDocumentIdIn(int i, List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByVersionAndIdIn(int i, List<Long> documentIds, Pageable pageable);
-
-    Page<Document> findBySubversionAndIdIn(int i, List<Long> documentIds, Pageable pageable);
+    Page<Document> findBySubversionAndReferenceDocumentIdIn(int i, List<Long> documentIds, Pageable pageable);
 
     Page<Document> findByReferenceDocumentIdIn(List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByIsAnnotableAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByIsAnnotableAndReferenceDocumentIdIn(boolean b, List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByIsPrivateAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
+    Page<Document> findByIsPrivateAndReferenceDocumentIdIn(boolean b, List<Long> documentIds, Pageable pageable);
 
     @Query("""
             select distinct d.id

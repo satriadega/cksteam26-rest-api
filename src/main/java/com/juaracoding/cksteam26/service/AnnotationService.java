@@ -1,18 +1,11 @@
 package com.juaracoding.cksteam26.service;
 
-import com.juaracoding.cksteam26.core.IService;
-import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
-import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
-import com.juaracoding.cksteam26.model.*;
-import com.juaracoding.cksteam26.repo.AnnotationRepo;
-import com.juaracoding.cksteam26.repo.DocumentRepo;
-import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
-import com.juaracoding.cksteam26.repo.UserRepo;
-import com.juaracoding.cksteam26.security.TokenExtractor;
-import com.juaracoding.cksteam26.util.GlobalResponse;
-import com.juaracoding.cksteam26.util.LoggingFile;
-import com.juaracoding.cksteam26.util.TransformPagination;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,10 +14,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.juaracoding.cksteam26.core.IService;
+import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
+import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
+import com.juaracoding.cksteam26.model.Annotation;
+import com.juaracoding.cksteam26.model.Document;
+import com.juaracoding.cksteam26.model.Notification;
+import com.juaracoding.cksteam26.model.Tag;
+import com.juaracoding.cksteam26.model.User;
+import com.juaracoding.cksteam26.model.UserDocumentPosition;
+import com.juaracoding.cksteam26.repo.AnnotationRepo;
+import com.juaracoding.cksteam26.repo.DocumentRepo;
+import com.juaracoding.cksteam26.repo.NotificationRepo;
+import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
+import com.juaracoding.cksteam26.repo.UserRepo;
+import com.juaracoding.cksteam26.security.TokenExtractor;
+import com.juaracoding.cksteam26.util.GlobalResponse;
+import com.juaracoding.cksteam26.util.LoggingFile;
+import com.juaracoding.cksteam26.util.TransformPagination;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
@@ -40,6 +49,9 @@ public class AnnotationService implements IService<Annotation> {
     AnnotationRepo annotationRepo;
 
     @Autowired
+    NotificationRepo notificationRepo;
+
+    @Autowired
     UserRepo userRepo;
 
     @Autowired
@@ -50,7 +62,6 @@ public class AnnotationService implements IService<Annotation> {
 
     @Autowired
     private TransformPagination transformPagination;
-
 
     private String className = "AnnotationService";
 
@@ -88,13 +99,29 @@ public class AnnotationService implements IService<Annotation> {
                 return GlobalResponse.customError("DOC04FV012", "Document is not annotable", request);
             }
 
-            Optional<UserDocumentPosition> udpOpt = userDocumentPositionRepo.findByUserIdAndDocumentId(userId, docId);
-            if (udpOpt.isEmpty()) {
-                return GlobalResponse.customError("DOC04FV007", "You do not have permission to annotate this document", request);
+            List<UserDocumentPosition> udpList = userDocumentPositionRepo.findAllByUserIdAndDocumentId(userId,
+                    document.getReferenceDocumentId());
+            if (udpList.isEmpty()) {
+                return GlobalResponse.customError("DOC04FV007", "You do not have permission to annotate this document",
+                        request);
+            }
+
+            UserDocumentPosition udp = udpList.get(0);
+            String position = udp.getPosition();
+
+            if (udpList.size() > 1) {
+                Long refId = document.getReferenceDocumentId();
+                if (refId != null) {
+                    documentRepo.findById(refId).ifPresent(refDoc -> {
+                        refDoc.setVerifiedAll(false);
+                        documentRepo.save(refDoc);
+                    });
+                }
             }
 
             Annotation annotation = mapToAnnotation(dto, document, userId);
-            if ("OWNER".equals(udpOpt.get().getPosition())) {
+
+            if ("OWNER".equalsIgnoreCase(position)) {
                 annotation.setVerified(true);
             }
 
@@ -117,11 +144,57 @@ public class AnnotationService implements IService<Annotation> {
 
             String substring = content.substring(startNo, endNo);
             if (!substring.equals(annotationText)) {
-                return GlobalResponse.customError("DOC04FV011", "Annotation text does not match document content at the specified position", request);
+                return GlobalResponse.customError("DOC04FV011",
+                        "Annotation text does not match document content at the specified position", request);
+            }
+
+            if ("VERIFIER".equalsIgnoreCase(position)) {
+                Long referenceId = document.getReferenceDocumentId();
+                if (referenceId == null) {
+                    referenceId = document.getId();
+                }
+                annotationRepo.updateAllIsVerifiedFalseByReferenceId(referenceId);
+                annotation.setVerified(false);
+                document.setVerifiedAll(false);
+                documentRepo.save(document);
             }
 
             annotation.setId(null);
             annotationRepo.save(annotation);
+
+            // Create notification for owner
+            Optional<UserDocumentPosition> userDocumentPositionOpt = userDocumentPositionRepo
+                    .findByDocumentIdAndPosition(
+                            document.getId(), "OWNER");
+
+            if (userDocumentPositionOpt.isPresent()) {
+                User ownerUser = userDocumentPositionOpt.get().getUser();
+                if (!ownerUser.getId().equals(userId)) {
+                    ownerUser.setUpdatedAt(new Date());
+                    ownerUser.setHasNotification(true);
+
+                    Integer notifType = ownerUser.getNotificationType();
+                    if (notifType == null || notifType == 0 || notifType == 2) {
+                        ownerUser.setNotificationType(2);
+                        System.err.println("debug");
+                    } else {
+                        ownerUser.setNotificationType(3);
+                    }
+
+                    Integer notifCounter = ownerUser.getNotificationCounter();
+                    ownerUser.setNotificationCounter((notifCounter == null ? 1 : notifCounter + 1));
+
+                    userRepo.save(ownerUser);
+
+                    Notification notification = new Notification();
+                    notification.setUser(ownerUser);
+                    notification.setIsRead(false);
+                    notification.setType("ANNOTATION");
+                    notification.setCreatedAt(new Date());
+                    notification.setId(null);
+                    notificationRepo.save(notification);
+                }
+            }
 
             return GlobalResponse.dataSavedSuccessfully(null, request);
         } catch (Exception e) {
@@ -129,7 +202,6 @@ public class AnnotationService implements IService<Annotation> {
             return GlobalResponse.serverError("DOC04FE001", request);
         }
     }
-
 
     @Override
     public ResponseEntity<Object> save(Annotation annotation, HttpServletRequest request) {
@@ -140,7 +212,6 @@ public class AnnotationService implements IService<Annotation> {
     public ResponseEntity<Object> update(Long id, Annotation annotation, HttpServletRequest request) {
         return null;
     }
-
 
     @Override
     public ResponseEntity<Object> delete(Long id, HttpServletRequest request) {
@@ -158,7 +229,8 @@ public class AnnotationService implements IService<Annotation> {
     }
 
     @Override
-    public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value, HttpServletRequest request) {
+    public ResponseEntity<Object> findByParam(Pageable pageable, String column, String value,
+            HttpServletRequest request) {
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
@@ -181,13 +253,16 @@ public class AnnotationService implements IService<Annotation> {
             } else {
                 switch (column.toLowerCase()) {
                     case "selectedtext":
-                        page = annotationRepo.findBySelectedTextContainingIgnoreCaseAndOwnerUserId(value, ownerUserId, pageable);
+                        page = annotationRepo.findBySelectedTextContainingIgnoreCaseAndOwnerUserId(value, ownerUserId,
+                                pageable);
                         break;
                     case "description":
-                        page = annotationRepo.findByDescriptionContainingIgnoreCaseAndOwnerUserId(value, ownerUserId, pageable);
+                        page = annotationRepo.findByDescriptionContainingIgnoreCaseAndOwnerUserId(value, ownerUserId,
+                                pageable);
                         break;
                     case "isverified":
-                        page = annotationRepo.findByIsVerifiedAndOwnerUserId(Boolean.parseBoolean(value), ownerUserId, pageable);
+                        page = annotationRepo.findByIsVerifiedAndOwnerUserId(Boolean.parseBoolean(value), ownerUserId,
+                                pageable);
                         break;
                     case "startno":
                         try {
@@ -229,7 +304,6 @@ public class AnnotationService implements IService<Annotation> {
             return GlobalResponse.serverError("DOC04FE011", request);
         }
     }
-
 
     public Annotation mapToAnnotation(ValAnnotationDTO dto, Document document, Long ownerUserId) {
         Annotation annotation = new Annotation();

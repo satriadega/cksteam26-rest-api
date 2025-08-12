@@ -8,19 +8,22 @@ Created on 03/08/25 11.40
 Version 1.0
 */
 
-import com.juaracoding.cksteam26.model.UserDocumentPosition;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.juaracoding.cksteam26.model.UserDocumentPosition;
 
 @Repository
 public interface UserDocumentPositionRepo extends JpaRepository<UserDocumentPosition, Long> {
 
     Optional<UserDocumentPosition> findByUserIdAndDocumentId(Long userId, Long documentId);
+
+    List<UserDocumentPosition> findAllByUserIdAndDocumentId(Long userId, Long documentId);
 
     Optional<UserDocumentPosition> findByDocumentIdAndPosition(Long documentId, String position);
 

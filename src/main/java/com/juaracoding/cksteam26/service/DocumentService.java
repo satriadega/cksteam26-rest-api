@@ -129,35 +129,40 @@ public class DocumentService implements IService<Document> {
             } else {
                 switch (column.toLowerCase()) {
                     case "title":
-                        page = documentRepo.findByTitleContainsIgnoreCaseAndIdIn(value, documentIds, pageable);
+                        page = documentRepo.findByTitleContainsIgnoreCaseAndReferenceDocumentIdIn(value, documentIds,
+                                pageable);
                         break;
                     case "content":
-                        page = documentRepo.findByContentContainsIgnoreCaseAndIdIn(value, documentIds, pageable);
+                        page = documentRepo.findByContentContainsIgnoreCaseAndReferenceDocumentIdIn(value, documentIds,
+                                pageable);
                         break;
                     case "isverifiedall":
-                        page = documentRepo.findByIsVerifiedAllAndIdIn(Boolean.parseBoolean(value), documentIds,
+                        System.out.println(value + " test");
+                        page = documentRepo.findByIsVerifiedAllAndReferenceDocumentIdIn(Boolean.parseBoolean(value),
+                                documentIds,
                                 pageable);
                         break;
                     case "publicvisibility":
-                        page = documentRepo.findByPublicVisibilityAndIdIn(Boolean.parseBoolean(value), documentIds,
-                                pageable);
-                        break;
-                    case "referencedocumentid":
-                        page = documentRepo.findByReferenceDocumentIdAndIdIn(Long.parseLong(value), documentIds,
+                        page = documentRepo.findByPublicVisibilityAndReferenceDocumentIdIn(Boolean.parseBoolean(value),
+                                documentIds,
                                 pageable);
                         break;
                     case "version":
-                        page = documentRepo.findByVersionAndIdIn(Integer.parseInt(value), documentIds, pageable);
+                        page = documentRepo.findByVersionAndReferenceDocumentIdIn(Integer.parseInt(value), documentIds,
+                                pageable);
                         break;
                     case "subversion":
-                        page = documentRepo.findBySubversionAndIdIn(Integer.parseInt(value), documentIds, pageable);
+                        page = documentRepo.findBySubversionAndReferenceDocumentIdIn(Integer.parseInt(value),
+                                documentIds, pageable);
                         break;
                     case "isannotable":
-                        page = documentRepo.findByIsAnnotableAndIdIn(Boolean.parseBoolean(value), documentIds,
+                        page = documentRepo.findByIsAnnotableAndReferenceDocumentIdIn(Boolean.parseBoolean(value),
+                                documentIds,
                                 pageable);
                         break;
                     case "isprivate":
-                        page = documentRepo.findByIsPrivateAndIdIn(Boolean.parseBoolean(value), documentIds,
+                        page = documentRepo.findByIsPrivateAndReferenceDocumentIdIn(Boolean.parseBoolean(value),
+                                documentIds,
                                 pageable);
                         break;
                     default:
