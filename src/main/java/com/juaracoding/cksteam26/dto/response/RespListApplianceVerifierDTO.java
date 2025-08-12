@@ -17,6 +17,7 @@ public class RespListApplianceVerifierDTO {
     private Boolean isAccepted;
     private Date createdAt;
     private String username;
+    private String fullname;
     private String name;
     private String email;
 
@@ -26,6 +27,14 @@ public class RespListApplianceVerifierDTO {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getFullname() {
+        return fullname;
+    }
+
+    public void setFullname(String fullname) {
+        this.fullname = fullname;
     }
 
     public String getName() {

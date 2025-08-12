@@ -136,7 +136,7 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
 
     Page<Document> findBySubversionAndIdIn(int i, List<Long> documentIds, Pageable pageable);
 
-    Page<Document> findByIdIn(List<Long> documentIds, Pageable pageable);
+    Page<Document> findByReferenceDocumentIdIn(List<Long> documentIds, Pageable pageable);
 
     Page<Document> findByIsAnnotableAndIdIn(boolean b, List<Long> documentIds, Pageable pageable);
 
@@ -164,5 +164,26 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             )
             """)
     List<Long> findVisibleDocumentIds(@Param("userId") Long userId);
+
+    @Query("""
+            select distinct d.id
+            from Document d
+            left join UserDocumentPosition udp on udp.document = d
+            where
+            (
+                (:userId IS NOT NULL AND udp.user.id = :userId)
+                OR
+                (
+                    d.isPrivate = false AND d.publicVisibility = false AND :userId IS NOT NULL
+                    AND EXISTS (
+                       SELECT 1
+                       FROM UserOrganization uo_viewer
+                       JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
+                       WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
+                    )
+                )
+            )
+            """)
+    List<Long> findPrivateDocumentIds(@Param("userId") Long userId);
 
 }

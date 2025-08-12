@@ -352,6 +352,7 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
                     User user = userOpt2.get();
                     dto.setUsername(user.getUsername());
                     dto.setEmail(user.getEmail());
+                    dto.setFullname(user.getName());
                 }
                 Optional<Document> documentOpt = documentRepo.findById(verifier.getDocumentId());
                 if (documentOpt.isPresent()) {

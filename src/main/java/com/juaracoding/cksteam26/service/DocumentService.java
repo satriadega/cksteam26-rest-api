@@ -114,7 +114,7 @@ public class DocumentService implements IService<Document> {
 
             Long userId = userOpt.get().getId();
 
-            List<Long> documentIds = documentRepo.findVisibleDocumentIds(userId);
+            List<Long> documentIds = documentRepo.findPrivateDocumentIds(userId);
 
             if (documentIds.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC02FV013", request);
@@ -125,7 +125,7 @@ public class DocumentService implements IService<Document> {
             boolean noFilter = (value == null || value.trim().isEmpty());
 
             if (noFilter) {
-                page = documentRepo.findByIdIn(documentIds, pageable);
+                page = documentRepo.findByReferenceDocumentIdIn(documentIds, pageable);
             } else {
                 switch (column.toLowerCase()) {
                     case "title":
@@ -161,7 +161,7 @@ public class DocumentService implements IService<Document> {
                                 pageable);
                         break;
                     default:
-                        page = documentRepo.findByIdIn(documentIds, pageable);
+                        page = documentRepo.findByReferenceDocumentIdIn(documentIds, pageable);
                         break;
                 }
             }
