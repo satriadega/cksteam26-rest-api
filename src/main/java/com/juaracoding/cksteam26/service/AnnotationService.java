@@ -110,12 +110,9 @@ public class AnnotationService implements IService<Annotation> {
             String position = udp.getPosition();
 
             if (udpList.size() > 1) {
-                Long refId = document.getReferenceDocumentId();
-                if (refId != null) {
-                    documentRepo.findById(refId).ifPresent(refDoc -> {
-                        refDoc.setVerifiedAll(false);
-                        documentRepo.save(refDoc);
-                    });
+                for (UserDocumentPosition userDocPosition : udpList) {
+                    userDocPosition.setIsVerified(false);
+                    userDocumentPositionRepo.save(userDocPosition);
                 }
             }
 
@@ -165,11 +162,14 @@ public class AnnotationService implements IService<Annotation> {
             // Create notification for owner
             Optional<UserDocumentPosition> userDocumentPositionOpt = userDocumentPositionRepo
                     .findByDocumentIdAndPosition(
-                            document.getId(), "OWNER");
+                            document.getReferenceDocumentId(), "OWNER");
 
             if (userDocumentPositionOpt.isPresent()) {
                 User ownerUser = userDocumentPositionOpt.get().getUser();
+                UserDocumentPosition ownerUdp = userDocumentPositionOpt.get();
                 if (!ownerUser.getId().equals(userId)) {
+                    ownerUdp.setIsVerified(false);
+                    userDocumentPositionRepo.save(ownerUdp);
                     ownerUser.setUpdatedAt(new Date());
                     ownerUser.setHasNotification(true);
 
