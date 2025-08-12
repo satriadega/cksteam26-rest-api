@@ -460,8 +460,9 @@ public class DocumentService implements IService<Document> {
                 }
             }
 
-            List<Document> documents = documentRepo.findRelatedDocumentsById(referenceDocumentId, userId);
+            List<Document> documents = documentRepo.findRelatedDocumentsByReferenceId(referenceDocumentId, userId);
 
+            System.err.println("sampe sini gan");
             if (documents.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC02FV041", request);
             }

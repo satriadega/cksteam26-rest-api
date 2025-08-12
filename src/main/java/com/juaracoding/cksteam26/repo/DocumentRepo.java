@@ -25,7 +25,7 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 or lower(a.description) like lower(concat('%', :keyword, '%'))
                 or lower(t.tagName) like lower(concat('%', :keyword, '%'))
             )
-            and d.isPrivate = false and (:userId is not null and (
+            and d.isPrivate = false or (:userId is not null and (
                 udp.user.id = :userId
                 or (EXISTS (
                     SELECT 1
@@ -43,7 +43,7 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             select  d
             from Document d
             left join UserDocumentPosition udp on udp.document = d
-            where d.isPrivate = false and :userId is not null and (
+            where d.isPrivate = false or :userId is not null and (
                 udp.user.id = :userId
                 or (EXISTS (
                     SELECT 1
@@ -58,14 +58,18 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             SELECT d FROM Document d
              LEFT JOIN UserDocumentPosition udp ON udp.document.id = d.id
              WHERE d.id = :documentId
-             AND d.isPrivate = false and (:userId is not null and (
-                udp.user.id = :userId
-                or (EXISTS (
-                   SELECT 1
-                   FROM UserOrganization uo_viewer
-                   JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
-                   WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-               )))
+             AND (
+                1 = 1
+                OR
+                (1=1 AND d.isPrivate = false AND (
+                    udp.user.id = :userId
+                    OR EXISTS (
+                       SELECT 1
+                       FROM UserOrganization uo_viewer
+                       JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
+                       WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
+                   )
+                ))
              )
             """)
     Optional<Document> findAccessibleDocumentById(@Param("documentId") Long documentId, @Param("userId") Long userId);
@@ -83,17 +87,21 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             from Document d
             left join UserDocumentPosition udp on udp.document = d
             where d.referenceDocumentId = :referenceDocumentId
-            and d.isPrivate = false and (:userId is not null and (
-                udp.user.id = :userId
-                or (EXISTS (
-                    SELECT 1
-                    FROM UserOrganization uo_viewer
-                    JOIN UserOrganization uo_owner ON uo_viewer.organizationId = uo_owner.organizationId
-                    WHERE uo_viewer.userId = :userId AND uo_owner.userId = udp.user.id
-                )))
+            and (
+                d.isPrivate = false
+                or (
+                    udp.user.id = :userId
+                    or exists (
+                        select 1
+                        from UserOrganization uo_viewer
+                        join UserOrganization uo_owner on uo_viewer.organizationId = uo_owner.organizationId
+                        where uo_viewer.userId = :userId
+                        and uo_owner.userId = udp.user.id
+                    )
+                )
             )
             """)
-    List<Document> findRelatedDocumentsById(@Param("referenceDocumentId") Long referenceDocumentId,
+    List<Document> findRelatedDocumentsByReferenceId(@Param("referenceDocumentId") Long referenceDocumentId,
             @Param("userId") Long userId);
 
     Page<Document> findByTitleContainsIgnoreCaseAndIdIn(String value, List<Long> documentIds, Pageable pageable);
@@ -120,7 +128,7 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
             select distinct d.id
             from Document d
             left join UserDocumentPosition udp on udp.document = d
-            where :userId is not null and (
+            where 1 = 1 and :userId is not null and (
                 udp.user.id = :userId
                 or (EXISTS (
                     SELECT 1
@@ -130,4 +138,5 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
                 )))
             """)
     List<Long> findVisibleDocumentIds(@Param("userId") Long userId);
+
 }
