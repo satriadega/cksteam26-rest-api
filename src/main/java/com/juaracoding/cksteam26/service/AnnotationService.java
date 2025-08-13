@@ -223,7 +223,40 @@ public class AnnotationService implements IService<Annotation> {
 
     @Override
     public ResponseEntity<Object> findById(Long id, HttpServletRequest request) {
-        return null;
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV041", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV042", request);
+            }
+            Long userId = userOpt.get().getId();
+
+            Optional<Annotation> annotationOpt = annotationRepo.findById(id);
+            if (annotationOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV043", request);
+            }
+            Annotation annotation = annotationOpt.get();
+
+            Document document = annotation.getDocument();
+            if (document == null) {
+                return GlobalResponse.dataIsNotFound("DOC04FV044", request);
+            }
+
+            Optional<Document> accessibleDocumentOpt = documentRepo.findAccessibleDocumentById(document.getId(), userId);
+            if (accessibleDocumentOpt.isEmpty()) {
+                return GlobalResponse.customError("DOC04FV045", "Forbidden", request);
+            }
+
+            return GlobalResponse.dataIsFound(mapToAnnotationDTO(annotation), request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(className, "findById", e);
+            return GlobalResponse.serverError("DOC04FE016", request);
+        }
     }
 
     @Override
@@ -326,6 +359,7 @@ public class AnnotationService implements IService<Annotation> {
 
     public RespAnnotationDTO mapToAnnotationDTO(Annotation annotation) {
         RespAnnotationDTO dto = modelMapper.map(annotation, RespAnnotationDTO.class);
+        dto.setAnnotationId(annotation.getId());
         Document document = annotation.getDocument();
         if (document != null) {
             dto.setDocumentName(document.getTitle());
@@ -343,7 +377,7 @@ public class AnnotationService implements IService<Annotation> {
         return dto;
     }
 
-    public ResponseEntity<Object> findAllByVerifier(HttpServletRequest request) {
+    public ResponseEntity<Object> findAllByOwnerAndVerifier(HttpServletRequest request) {
         try {
             String username = tokenExtractor.extractUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
@@ -356,7 +390,8 @@ public class AnnotationService implements IService<Annotation> {
             }
             Long userId = userOpt.get().getId();
 
-            List<Annotation> annotations = annotationRepo.findByUserDocumentPosition(userId, "VERIFIER");
+            List<String> positions = List.of("OWNER", "VERIFIER");
+            List<Annotation> annotations = annotationRepo.findByUserDocumentPositionIn(userId, positions);
 
             if (annotations.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC04FV025", request);
@@ -374,7 +409,7 @@ public class AnnotationService implements IService<Annotation> {
             return GlobalResponse.dataIsFound(dtoList, request);
 
         } catch (Exception e) {
-            LoggingFile.logException(className, "findAllByVerifier", e);
+            LoggingFile.logException(className, "findAllByOwnerAndVerifier", e);
             return GlobalResponse.serverError("DOC04FE014", request);
         }
     }

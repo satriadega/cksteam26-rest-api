@@ -42,8 +42,8 @@ public class AnnotationController {
     }
 
     @GetMapping("/verifier")
-    public Object findAllByVerifier(HttpServletRequest request) {
-        return annotationService.findAllByVerifier(request);
+    public Object findAllByOwnerAndVerifier(HttpServletRequest request) {
+        return annotationService.findAllByOwnerAndVerifier(request);
     }
 
     @PutMapping("/verifier/{annotationId}")
@@ -52,6 +52,11 @@ public class AnnotationController {
             @RequestParam String action,
             HttpServletRequest request) {
         return annotationService.updateAnnotationStatus(annotationId, action, request);
+    }
+
+    @GetMapping("/detail/{id}")
+    public Object findById(@PathVariable Long id, HttpServletRequest request) {
+        return annotationService.findById(id, request);
     }
 
     @GetMapping("/{sort}/{sortBy}/{page}")

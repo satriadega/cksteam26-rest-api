@@ -12,6 +12,8 @@ import java.util.List;
 
 public class RespAnnotationDTO {
 
+    private Long annotationId;
+
     private Long documentId;
 
     private String documentName;
@@ -33,6 +35,14 @@ public class RespAnnotationDTO {
     private List<RespTagDTO> tags;
 
     private java.util.Date createdAt;
+
+    public Long getAnnotationId() {
+        return annotationId;
+    }
+
+    public void setAnnotationId(Long annotationId) {
+        this.annotationId = annotationId;
+    }
 
     public Boolean getVerified() {
         return isVerified;

@@ -251,6 +251,31 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
                         notification.setId(null);
                         notificationRepo.save(notification);
                     }
+
+                    // Notify the owner as well
+                    Optional<UserDocumentPosition> ownerUdpOpt = userDocumentPositionRepo.findByDocumentIdAndPosition(documentId, "OWNER");
+                    if (ownerUdpOpt.isPresent()) {
+                        User ownerUser = ownerUdpOpt.get().getUser();
+                        ownerUser.setHasNotification(true);
+                        Integer ownerNotifType = ownerUser.getNotificationType();
+                        if (ownerNotifType == null || ownerNotifType == 0 || ownerNotifType == 2) {
+                            ownerUser.setNotificationType(2);
+                        } else {
+                            ownerUser.setNotificationType(3);
+                        }
+                        ownerUser.setNotificationCounter(unverifiedAnnotations.size());
+                        userRepo.save(ownerUser);
+
+                        for (Annotation annotation : unverifiedAnnotations) {
+                            Notification notification = new Notification();
+                            notification.setUser(ownerUser);
+                            notification.setIsRead(false);
+                            notification.setType("ANNOTATION");
+                            notification.setCreatedAt(new Date());
+                            notification.setId(null);
+                            notificationRepo.save(notification);
+                        }
+                    }
                 }
 
                 return GlobalResponse.dataSavedSuccessfully(updated, request);
