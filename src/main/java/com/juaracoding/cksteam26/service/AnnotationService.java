@@ -146,11 +146,7 @@ public class AnnotationService implements IService<Annotation> {
             }
 
             if ("VERIFIER".equalsIgnoreCase(position)) {
-                Long referenceId = document.getReferenceDocumentId();
-                if (referenceId == null) {
-                    referenceId = document.getId();
-                }
-                annotationRepo.updateAllIsVerifiedFalseByReferenceId(referenceId);
+                annotationRepo.setIsVerifiedFalseByDocumentId(document.getId());
                 annotation.setVerified(false);
                 document.setVerifiedAll(false);
                 documentRepo.save(document);
@@ -159,35 +155,32 @@ public class AnnotationService implements IService<Annotation> {
             annotation.setId(null);
             annotationRepo.save(annotation);
 
-            // Create notification for owner
-            Optional<UserDocumentPosition> userDocumentPositionOpt = userDocumentPositionRepo
-                    .findByDocumentIdAndPosition(
-                            document.getReferenceDocumentId(), "OWNER");
+            // Create notification for owner and verifiers
+            List<UserDocumentPosition> allPositions = userDocumentPositionRepo
+                    .findAllByDocumentId(document.getReferenceDocumentId());
 
-            if (userDocumentPositionOpt.isPresent()) {
-                User ownerUser = userDocumentPositionOpt.get().getUser();
-                UserDocumentPosition ownerUdp = userDocumentPositionOpt.get();
-                if (!ownerUser.getId().equals(userId)) {
-                    ownerUdp.setIsVerified(false);
-                    userDocumentPositionRepo.save(ownerUdp);
-                    ownerUser.setUpdatedAt(new Date());
-                    ownerUser.setHasNotification(true);
+            for (UserDocumentPosition userDocPos : allPositions) {
+                User targetUser = userDocPos.getUser();
+                if (!targetUser.getId().equals(userId)) {
+                    userDocPos.setIsVerified(false);
+                    userDocumentPositionRepo.save(userDocPos);
+                    targetUser.setUpdatedAt(new Date());
+                    targetUser.setHasNotification(true);
 
-                    Integer notifType = ownerUser.getNotificationType();
+                    Integer notifType = targetUser.getNotificationType();
                     if (notifType == null || notifType == 0 || notifType == 2) {
-                        ownerUser.setNotificationType(2);
-                        System.err.println("debug");
+                        targetUser.setNotificationType(2);
                     } else {
-                        ownerUser.setNotificationType(3);
+                        targetUser.setNotificationType(3);
                     }
 
-                    Integer notifCounter = ownerUser.getNotificationCounter();
-                    ownerUser.setNotificationCounter((notifCounter == null ? 1 : notifCounter + 1));
+                    Integer notifCounter = targetUser.getNotificationCounter();
+                    targetUser.setNotificationCounter((notifCounter == null ? 1 : notifCounter + 1));
 
-                    userRepo.save(ownerUser);
+                    userRepo.save(targetUser);
 
                     Notification notification = new Notification();
-                    notification.setUser(ownerUser);
+                    notification.setUser(targetUser);
                     notification.setIsRead(false);
                     notification.setType("ANNOTATION");
                     notification.setCreatedAt(new Date());
@@ -327,6 +320,58 @@ public class AnnotationService implements IService<Annotation> {
     }
 
     public RespAnnotationDTO mapToAnnotationDTO(Annotation annotation) {
-        return modelMapper.map(annotation, RespAnnotationDTO.class);
+        RespAnnotationDTO dto = modelMapper.map(annotation, RespAnnotationDTO.class);
+        Document document = annotation.getDocument();
+        if (document != null) {
+            dto.setDocumentName(document.getTitle());
+        }
+
+        Long ownerUserId = annotation.getOwnerUserId();
+        if (ownerUserId != null) {
+            Optional<User> userOpt = userRepo.findById(ownerUserId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                dto.setUsername(user.getUsername());
+                dto.setFullName(user.getName());
+            }
+        }
+        return dto;
+    }
+
+    public ResponseEntity<Object> findAllByVerifier(HttpServletRequest request) {
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV023", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV024", request);
+            }
+            Long userId = userOpt.get().getId();
+
+            List<Annotation> annotations = annotationRepo.findByUserDocumentPosition(userId, "VERIFIER");
+            annotations.addAll(annotationRepo.findByUserDocumentPosition(userId, "OWNER"));
+
+            if (annotations.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV025", request);
+            }
+
+            List<RespAnnotationDTO> dtoList = annotations.stream()
+                    .filter(annotation -> Boolean.FALSE.equals(annotation.getVerified()))
+                    .map(this::mapToAnnotationDTO)
+                    .collect(Collectors.toList());
+
+            if (dtoList.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV026", request);
+            }
+
+            return GlobalResponse.dataIsFound(dtoList, request);
+
+        } catch (Exception e) {
+            LoggingFile.logException(className, "findAllByVerifier", e);
+            return GlobalResponse.serverError("DOC04FE014", request);
+        }
     }
 }

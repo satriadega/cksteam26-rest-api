@@ -14,7 +14,11 @@ public class RespAnnotationDTO {
 
     private Long documentId;
 
-    private Long ownerUserId;
+    private String documentName;
+
+    private String username;
+
+    private String fullName;
 
     private Boolean isVerified;
 
@@ -54,12 +58,28 @@ public class RespAnnotationDTO {
         this.documentId = documentId;
     }
 
-    public Long getOwnerUserId() {
-        return ownerUserId;
+    public String getDocumentName() {
+        return documentName;
     }
 
-    public void setOwnerUserId(Long ownerUserId) {
-        this.ownerUserId = ownerUserId;
+    public void setDocumentName(String documentName) {
+        this.documentName = documentName;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public Boolean getIsVerified() {

@@ -40,6 +40,11 @@ public class AnnotationController {
         return annotationService.save(valAnnotationDTO, request);
     }
 
+    @GetMapping("/verifier")
+    public Object findAllByVerifier(HttpServletRequest request) {
+        return annotationService.findAllByVerifier(request);
+    }
+
     @GetMapping("/{sort}/{sortBy}/{page}")
     public Object findByParam(
             @PathVariable Integer page,

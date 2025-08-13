@@ -32,4 +32,8 @@ public interface UserDocumentPositionRepo extends JpaRepository<UserDocumentPosi
 
     Optional<UserDocumentPosition> findByDocumentIdAndUserIdAndPosition(Long documentId, Long userId, String position);
 
+    List<UserDocumentPosition> findAllByDocumentIdAndPosition(Long documentId, String position);
+
+    List<UserDocumentPosition> findAllByDocumentId(Long documentId);
+
 }
