@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -43,6 +44,14 @@ public class AnnotationController {
     @GetMapping("/verifier")
     public Object findAllByVerifier(HttpServletRequest request) {
         return annotationService.findAllByVerifier(request);
+    }
+
+    @PutMapping("/verifier/{annotationId}")
+    public Object updateAnnotationStatus(
+            @PathVariable Long annotationId,
+            @RequestParam String action,
+            HttpServletRequest request) {
+        return annotationService.updateAnnotationStatus(annotationId, action, request);
     }
 
     @GetMapping("/{sort}/{sortBy}/{page}")

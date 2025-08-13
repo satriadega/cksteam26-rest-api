@@ -49,4 +49,8 @@ public interface AnnotationRepo extends JpaRepository<Annotation, Long> {
 
     @Query("SELECT a FROM Annotation a JOIN a.document d JOIN UserDocumentPosition udp ON d.id = udp.document.id WHERE udp.user.id = :userId AND udp.position = :position")
     List<Annotation> findByUserDocumentPosition(@Param("userId") Long userId, @Param("position") String position);
+
+    List<Annotation> findByDocumentId(Long documentId);
+
+    List<Annotation> findByDocumentIdAndIsVerified(Long documentId, Boolean isVerified);
 }

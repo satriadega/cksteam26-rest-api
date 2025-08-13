@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespListApplianceVerifierDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValUpdateApplianceVerifierDTO;
+import com.juaracoding.cksteam26.model.Annotation;
 import com.juaracoding.cksteam26.model.Document;
 import com.juaracoding.cksteam26.model.ListApplianceDocumentVerifier;
 import com.juaracoding.cksteam26.model.Notification;
@@ -225,6 +226,32 @@ public class ListApplianceDocumentVerifierService implements IService<ListApplia
                 userDocumentPositionRepo.save(newUdp);
 
                 annotationRepo.setIsVerifiedFalseByDocumentId(documentId);
+
+                // Send notification for unverified annotations
+                List<Annotation> unverifiedAnnotations = annotationRepo
+                        .findByDocumentIdAndIsVerified(documentId, false);
+                if (!unverifiedAnnotations.isEmpty()) {
+                    User verifierUser = userOpt.get();
+                    verifierUser.setHasNotification(true);
+                    Integer notifType = verifierUser.getNotificationType();
+                    if (notifType == null || notifType == 0 || notifType == 2) {
+                        verifierUser.setNotificationType(2);
+                    } else {
+                        verifierUser.setNotificationType(3);
+                    }
+                    verifierUser.setNotificationCounter(unverifiedAnnotations.size());
+                    userRepo.save(verifierUser);
+
+                    for (Annotation annotation : unverifiedAnnotations) {
+                        Notification notification = new Notification();
+                        notification.setUser(verifierUser);
+                        notification.setIsRead(false);
+                        notification.setType("ANNOTATION");
+                        notification.setCreatedAt(new Date());
+                        notification.setId(null);
+                        notificationRepo.save(notification);
+                    }
+                }
 
                 return GlobalResponse.dataSavedSuccessfully(updated, request);
             } else {

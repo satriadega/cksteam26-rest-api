@@ -18,12 +18,14 @@ import com.juaracoding.cksteam26.core.IService;
 import com.juaracoding.cksteam26.dto.response.RespAnnotationDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValAnnotationDTO;
 import com.juaracoding.cksteam26.model.Annotation;
+import com.juaracoding.cksteam26.model.AnnotationVerification;
 import com.juaracoding.cksteam26.model.Document;
 import com.juaracoding.cksteam26.model.Notification;
 import com.juaracoding.cksteam26.model.Tag;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.model.UserDocumentPosition;
 import com.juaracoding.cksteam26.repo.AnnotationRepo;
+import com.juaracoding.cksteam26.repo.AnnotationVerificationRepo;
 import com.juaracoding.cksteam26.repo.DocumentRepo;
 import com.juaracoding.cksteam26.repo.NotificationRepo;
 import com.juaracoding.cksteam26.repo.UserDocumentPositionRepo;
@@ -56,6 +58,9 @@ public class AnnotationService implements IService<Annotation> {
 
     @Autowired
     UserDocumentPositionRepo userDocumentPositionRepo;
+
+    @Autowired
+    AnnotationVerificationRepo annotationVerificationRepo;
 
     @Autowired
     TokenExtractor tokenExtractor;
@@ -352,7 +357,6 @@ public class AnnotationService implements IService<Annotation> {
             Long userId = userOpt.get().getId();
 
             List<Annotation> annotations = annotationRepo.findByUserDocumentPosition(userId, "VERIFIER");
-            annotations.addAll(annotationRepo.findByUserDocumentPosition(userId, "OWNER"));
 
             if (annotations.isEmpty()) {
                 return GlobalResponse.dataIsNotFound("DOC04FV025", request);
@@ -372,6 +376,121 @@ public class AnnotationService implements IService<Annotation> {
         } catch (Exception e) {
             LoggingFile.logException(className, "findAllByVerifier", e);
             return GlobalResponse.serverError("DOC04FE014", request);
+        }
+    }
+
+    public ResponseEntity<Object> updateAnnotationStatus(Long annotationId, String action, HttpServletRequest request) {
+        try {
+            String username = tokenExtractor.extractUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV027", request);
+            }
+
+            Optional<User> userOpt = userRepo.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV028", request);
+            }
+            Long userId = userOpt.get().getId();
+
+            Optional<Annotation> annotationOpt = annotationRepo.findById(annotationId);
+            if (annotationOpt.isEmpty()) {
+                return GlobalResponse.dataIsNotFound("DOC04FV029", request);
+            }
+            Annotation annotation = annotationOpt.get();
+
+            Document document = annotation.getDocument();
+            if (document == null) {
+                return GlobalResponse.dataIsNotFound("DOC04FV030", request);
+            }
+
+            List<UserDocumentPosition> udpList = userDocumentPositionRepo.findAllByUserIdAndDocumentId(userId,
+                    document.getId());
+            if (udpList.isEmpty()) {
+                return GlobalResponse.customError("DOC04FV031",
+                        "You do not have permission to modify this annotation", request);
+            }
+
+            boolean isOwnerOrVerifier = udpList.stream()
+                    .anyMatch(udp -> "OWNER".equalsIgnoreCase(udp.getPosition())
+                            || "VERIFIER".equalsIgnoreCase(udp.getPosition()));
+
+            if (!isOwnerOrVerifier) {
+                return GlobalResponse.customError("DOC04FV032",
+                        "You do not have the required role (OWNER/VERIFIER) to modify this annotation", request);
+            }
+
+            if (annotation.getOwnerUserId().equals(userId)) {
+                return GlobalResponse.customError("DOC04FV033",
+                        "You cannot accept or reject your own annotation", request);
+            }
+
+            if ("accept".equalsIgnoreCase(action)) {
+                AnnotationVerification verification = annotationVerificationRepo
+                        .findByAnnotationIdAndUsername(annotationId, username)
+                        .orElse(new AnnotationVerification());
+                verification.setAnnotation(annotation);
+                verification.setUsername(username);
+                verification.setStatus("ACCEPTED");
+                annotationVerificationRepo.save(verification);
+
+                long verifierCount = userDocumentPositionRepo.countByDocumentIdAndPosition(document.getId(), "VERIFIER")
+                        - 1;
+                long acceptedCount = annotation.getVerifications().stream()
+                        .filter(v -> "ACCEPTED".equals(v.getStatus())).count();
+
+                if (acceptedCount >= verifierCount) {
+                    annotation.setVerified(true);
+                }
+                annotationRepo.save(annotation);
+
+                // Check if all annotations for the document are verified
+                List<Annotation> allAnnotations = annotationRepo.findByDocumentId(document.getId());
+                boolean allVerified = allAnnotations.stream().allMatch(Annotation::getVerified);
+                if (allVerified) {
+                    document.setVerifiedAll(true);
+                    documentRepo.save(document);
+
+                    // Update UserDocumentPosition for all users
+                    List<UserDocumentPosition> allDocPositions = userDocumentPositionRepo
+                            .findAllByDocumentId(document.getId());
+                    for (UserDocumentPosition docPos : allDocPositions) {
+                        docPos.setIsVerified(true);
+                        userDocumentPositionRepo.save(docPos);
+                    }
+                }
+
+                return GlobalResponse.dataSavedSuccessfully(null, request);
+            } else if ("reject".equalsIgnoreCase(action)) {
+                AnnotationVerification verification = annotationVerificationRepo
+                        .findByAnnotationIdAndUsername(annotationId, username)
+                        .orElse(new AnnotationVerification());
+                verification.setAnnotation(annotation);
+                verification.setUsername(username);
+                verification.setStatus("REJECTED");
+                annotationVerificationRepo.save(verification);
+
+                annotation.setCounterRejected(annotation.getCounterRejected() + 1);
+                annotation.setVerified(false);
+                annotationRepo.save(annotation);
+
+                document.setVerifiedAll(false);
+                documentRepo.save(document);
+
+                List<UserDocumentPosition> allDocPositions = userDocumentPositionRepo
+                        .findAllByDocumentId(document.getId());
+                for (UserDocumentPosition docPos : allDocPositions) {
+                    docPos.setIsVerified(false);
+                    userDocumentPositionRepo.save(docPos);
+                }
+
+                return GlobalResponse.dataSavedSuccessfully(null, request);
+            } else {
+                return GlobalResponse.badRequest("Invalid action. Please use 'accept' or 'reject'.", request);
+            }
+
+        } catch (Exception e) {
+            LoggingFile.logException(className, "updateAnnotationStatus", e);
+            return GlobalResponse.serverError("DOC04FE015", request);
         }
     }
 }

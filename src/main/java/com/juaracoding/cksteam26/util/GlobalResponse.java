@@ -52,4 +52,12 @@ public class GlobalResponse {
     public static ResponseEntity<Object> forbidden(String errorCode, HttpServletRequest request) {
         return new ResponseHandler().handleResponse("FORBIDDEN", HttpStatus.FORBIDDEN, null, errorCode, request);
     }
+
+    public static ResponseEntity<Object> dataDeletedSuccessfully(HttpServletRequest request) {
+        return new ResponseHandler().handleResponse("DATA SUCCESSFULLY DELETED", HttpStatus.OK, null, null, request);
+    }
+
+    public static ResponseEntity<Object> badRequest(String message, HttpServletRequest request) {
+        return new ResponseHandler().handleResponse(message, HttpStatus.BAD_REQUEST, null, null, request);
+    }
 }
