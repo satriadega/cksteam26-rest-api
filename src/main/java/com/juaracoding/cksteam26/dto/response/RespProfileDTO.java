@@ -17,6 +17,15 @@ public class RespProfileDTO {
     private Boolean hasNotification;
     private Integer notificationCounter;
     private Integer notificationType;
+    private String pathFoto;
+
+    public String getPathFoto() {
+        return pathFoto;
+    }
+
+    public void setPathFoto(String pathFoto) {
+        this.pathFoto = pathFoto;
+    }
 
     public String getUsername() {
         return username;

@@ -6,3 +6,5 @@ target/
 .DS_Store
 .my_config
 encryption_key.txt
+src/main/resources/static/images
+my_secret.txt

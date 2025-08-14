@@ -8,6 +8,26 @@ Created on 03/08/25 01.28
 Version 1.0
 */
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.juaracoding.cksteam26.config.JwtConfig;
 import com.juaracoding.cksteam26.dto.response.RespProfileDTO;
 import com.juaracoding.cksteam26.dto.validasi.ValUpdateProfileDTO;
@@ -18,24 +38,20 @@ import com.juaracoding.cksteam26.security.Crypto;
 import com.juaracoding.cksteam26.security.JwtUtility;
 import com.juaracoding.cksteam26.util.GlobalResponse;
 import com.juaracoding.cksteam26.util.LoggingFile;
-import jakarta.servlet.http.HttpServletRequest;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Transactional
 public class ProfileService {
 
     private String className = "ProfileService";
+
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private String maxFileSize;
+
+    @Value("${upload.path}")
+    private String uploadPath;
 
     @Autowired
     private UserRepo userRepo;
@@ -77,11 +93,14 @@ public class ProfileService {
         }
     }
 
-    public ResponseEntity<Object> update(User user, HttpServletRequest request) {
-        if (user == null) {
-            return GlobalResponse.objectNull("DOC03FV011", request);
-        }
+    public ResponseEntity<Object> update(String strUser, MultipartFile file, HttpServletRequest request) {
         try {
+            ValUpdateProfileDTO user = new ObjectMapper().readValue(strUser, ValUpdateProfileDTO.class);
+
+            if (user == null) {
+                return GlobalResponse.objectNull("DOC03FV011", request);
+            }
+
             String bearerToken = request.getHeader("Authorization");
             if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
                 return GlobalResponse.dataIsNotFound("DOC03FV012", request);
@@ -104,6 +123,37 @@ public class ProfileService {
             }
 
             User existingUser = userOpt.get();
+
+            if (file != null && !file.isEmpty()) {
+                if (file.getSize() > 2 * 1024 * 1024) { // 2MB
+                    return GlobalResponse.customError("DOC03FV016", "Ukuran file tidak boleh melebihi 2MB", request);
+                }
+
+                String contentType = file.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    return GlobalResponse.customError("DOC03FV017", "Format file harus berupa gambar", request);
+                }
+
+                String originalFilename = StringUtils.cleanPath(file.getOriginalFilename().replace(" ", "_"));
+                String fileName = System.currentTimeMillis() + "_" + originalFilename;
+                Path uploadDir = Paths.get(uploadPath);
+                if (!Files.exists(uploadDir)) {
+                    try {
+                        Files.createDirectories(uploadDir);
+                    } catch (IOException e) {
+                        LoggingFile.logException(getClass().getSimpleName(), "update", e);
+                        return GlobalResponse.serverError("DOC03FE013", request);
+                    }
+                }
+                Path path = Paths.get(uploadPath + fileName);
+                try {
+                    Files.copy(file.getInputStream(), path);
+                    existingUser.setPathFoto("/images/" + fileName);
+                } catch (IOException e) {
+                    LoggingFile.logException(getClass().getSimpleName(), "update", e);
+                    return GlobalResponse.serverError("DOC03FE012", request);
+                }
+            }
 
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 String rawPasswordWithUsername = username + user.getPassword();

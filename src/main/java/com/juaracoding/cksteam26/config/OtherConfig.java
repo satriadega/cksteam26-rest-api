@@ -66,6 +66,6 @@ public class OtherConfig {
 
     @Value("${enable.log.file}")
     private void setEnableLogFile(String enableLogFile) {
-        this.enableLogFile = enableLogFile;
+        OtherConfig.enableLogFile = enableLogFile;
     }
 }

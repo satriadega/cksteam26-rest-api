@@ -1,6 +1,7 @@
 package com.juaracoding.cksteam26.security;
 
 import java.util.Scanner;
+
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -36,7 +37,8 @@ public class Crypto {
     }
 
     public static String performEncrypt(String cryptoText) {
-        if(defaultKey == null) throw new IllegalStateException("ENCRYPTION_KEY environment variable not set");
+        if (defaultKey == null)
+            throw new IllegalStateException("ENCRYPTION_KEY environment variable not set");
         return performEncrypt(defaultKey, cryptoText);
     }
 
@@ -56,7 +58,8 @@ public class Crypto {
     }
 
     public static String performDecrypt(String cryptoText) {
-        if(defaultKey == null) throw new IllegalStateException("ENCRYPTION_KEY environment variable not set");
+        if (defaultKey == null)
+            throw new IllegalStateException("ENCRYPTION_KEY environment variable not set");
         return performDecrypt(defaultKey, cryptoText);
     }
 
@@ -65,21 +68,29 @@ public class Crypto {
 
         String keyFromEnv = System.getenv("ENCRYPTION_KEY");
         if (keyFromEnv == null || !keyFromEnv.matches("^[a-fA-F0-9]{64}$")) {
-            System.out.println("Invalid or missing ENCRYPTION_KEY environment variable.");
+            System.out.println(
+                    "Invalid or missing ENCRYPTION_KEY environment variable. Please set a 64-character hex key.");
             scanner.close();
             return;
         }
 
         System.out.println("Using ENCRYPTION_KEY from environment.");
+        System.out.println("Choose operation: (1) Encrypt (2) Decrypt");
+        String choice = scanner.nextLine();
 
-        System.out.println("Enter text to encrypt:");
-        String plaintext = scanner.nextLine();
-
-        String encrypted = performEncrypt(keyFromEnv, plaintext);
-        System.out.println("Encrypted: " + encrypted);
-
-        String decrypted = performDecrypt(keyFromEnv, encrypted);
-        System.out.println("Decrypted: " + decrypted);
+        if ("1".equals(choice)) {
+            System.out.println("Enter text to encrypt:");
+            String plaintext = scanner.nextLine();
+            String encrypted = performEncrypt(keyFromEnv, plaintext);
+            System.out.println("Encrypted: " + encrypted);
+        } else if ("2".equals(choice)) {
+            System.out.println("Enter text to decrypt:");
+            String encryptedText = scanner.nextLine();
+            String decrypted = performDecrypt(keyFromEnv, encryptedText);
+            System.out.println("Decrypted: " + decrypted);
+        } else {
+            System.out.println("Invalid choice.");
+        }
 
         scanner.close();
     }

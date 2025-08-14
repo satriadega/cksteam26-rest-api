@@ -67,6 +67,9 @@ public class User implements UserDetails {
     @Column(name = "UpdatedAt")
     private Date updatedAt;
 
+    @Column(name = "PathFoto", length = 255)
+    private String pathFoto;
+
     /**
      * disini letak role dari user nya yang akan di baca di API nanti
      */
@@ -185,5 +188,13 @@ public class User implements UserDetails {
 
     public void setTokenEstafet(String tokenEstafet) {
         this.tokenEstafet = tokenEstafet;
+    }
+
+    public String getPathFoto() {
+        return pathFoto;
+    }
+
+    public void setPathFoto(String pathFoto) {
+        this.pathFoto = pathFoto;
     }
 }

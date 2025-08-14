@@ -9,22 +9,22 @@ Version 1.0
 */
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.juaracoding.cksteam26.dto.validasi.ValUpdateProfileDTO;
 import com.juaracoding.cksteam26.model.User;
 import com.juaracoding.cksteam26.service.AuthService;
 import com.juaracoding.cksteam26.service.ProfileService;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("profile")
@@ -42,11 +42,12 @@ public class ProfileController {
         return profileService.findByAccount(request);
     }
 
-    @PutMapping()
+    @PutMapping(value = "", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<Object> update(
-            @Valid @RequestBody ValUpdateProfileDTO valUpdateProfile,
+            @RequestPart("data") String valUpdateProfile,
+            @RequestPart(value = "file", required = false) MultipartFile file,
             HttpServletRequest request) {
-        return profileService.update(profileService.mapToModelMapper(valUpdateProfile), request);
+        return profileService.update(valUpdateProfile, file, request);
     }
 
     @DeleteMapping()
