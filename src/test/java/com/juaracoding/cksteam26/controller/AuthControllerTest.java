@@ -69,7 +69,7 @@ public class AuthControllerTest extends AbstractTestNGSpringContextTests {
 
             Assert.assertEquals(intResponse, 200);
             Assert.assertEquals(jsonPath.getString("data.email"), email);
-            Assert.assertEquals(jsonPath.getString("message"), "Automation Testing: OTP Berhasil Dibuat !!");
+            Assert.assertEquals(jsonPath.getString("message"), "Automation Testing: OTP successfully generated!");
             Assert.assertTrue(Boolean.parseBoolean(jsonPath.getString("success")));
             Assert.assertNotNull(jsonPath.getString("timestamp"));
 
