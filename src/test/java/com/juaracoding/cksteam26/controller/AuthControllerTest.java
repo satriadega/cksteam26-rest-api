@@ -33,7 +33,7 @@ public class AuthControllerTest extends AbstractTestNGSpringContextTests {
 
     @BeforeClass
     void init() {
-        RestAssured.baseURI = "http://localhost:8081";
+        RestAssured.baseURI = "http://localhost:8080";
         dataGenerator = new DataGenerator();
         rand = new Random();
         req = new JSONObject();
@@ -54,11 +54,8 @@ public class AuthControllerTest extends AbstractTestNGSpringContextTests {
             req.put("email", email);
             req.put("password", password);
 
-            response = given().
-                    header("Content-Type", "application/json").
-                    header("accept", "*/*").
-                    body(req).
-                    request(Method.POST, "auth/registration");
+            response = given().header("Content-Type", "application/json").header("accept", "*/*").body(req)
+                    .request(Method.POST, "auth/registration");
 
             int intResponse = response.getStatusCode();
             JsonPath jsonPath = response.jsonPath();
