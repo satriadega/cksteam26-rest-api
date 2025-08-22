@@ -40,6 +40,6 @@ ENV SPRING_DATASOURCE_PASSWORD=""
 
 COPY --from=builder /app/target/*.jar app.jar
 
-EXPOSE 8084
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
